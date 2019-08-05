@@ -11,6 +11,7 @@ classical programming and saving tons of boilerplate code.''',
   packages=find_packages(),
   install_requires=[
     'abm',
-    'qiskit'
+    'qiskit',
+    'astpretty'
   ]
 )

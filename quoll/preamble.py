@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence
+from typing import Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping
 from functools import partial
 
 from quoll.measurements import Measurement, MeasurementProxy
@@ -55,46 +55,27 @@ class Adjoint(Functor, metaclass=MetaFunctor):
 Adj = Adjoint
 
 
-@bp.singleton
-class X:
+def X(q: Qubit):
+  q.allocation.circuit.x(q.register)
 
-  def __call__(self, q: Qubit):
-    q.allocation.circuit.x(q.register)
+def _X_ctl(control: Sequence[Qubit], q: Qubit):
+  #TODO: Extend with toffoli gates to allow multi controlled X.
+  #TODO: Provide a decorator for adding the proper runtime signature checks.
+  if not len(control) or len(control) > 1:
+    raise NotImplementedError(
+      'Current Controlled[X] implementation supports one control qubit only')
 
-  #TODO: Provide the means for setting up...
-  #TODO:   The adjoint and controlled versions of __adj__ and __ctl__.
-  @property
-  def __ctl__(self):
+  q.allocation.circuit.cx(control[0].register, q.register)
 
-    #TODO: Provide a decorator for adding the proper runtime signature checks.
-    def _controlled(control: Sequence[Qubit], q: Qubit):
-      #TODO: Extend with toffoli gates to allow multi controlled X.
-      if not len(control) or len(control) > 1:
-        raise NotImplementedError(
-          'Current Controlled[X] implementation supports one control qubit only')
+setattr(X, '__adj__', X)
+setattr(X, '__ctl__', _X_ctl)
+setattr(_X_ctl, '__adj__', _X_ctl)
+#TODO: No idea of how to define the ctl of a ctl
 
-      q.allocation.circuit.cx(control[0].register, q.register)
-
-    return _controlled
-
-  @property
-  def __adj__(self):
-    return self
-
-
-@bp.singleton
-class H:
-
-  def __call__(self, q: Qubit):
+def H(q: Qubit):
     q.allocation.circuit.h(q.register)
 
-  @property
-  def __ctl__(self):
-    raise NotImplementedError
-
-  @property
-  def __adj__(self):
-    return self
+setattr(H, '__adj__', H)
 
 def R1(angle: float, q: Qubit):
   pass
@@ -137,14 +118,18 @@ def allocate(*sizes: int) -> Allocation:
   return Allocation(*sizes)
 
 
+_MEASUREMENT_PROXY_CACHE: MutableMapping[Qubit, MeasurementProxy] = {}
+
 def measure(register: Qubit, reset=False) -> MeasurementProxy:
-  #TODO: Keep a cache for returning the same MeasurementProxy for the same Qubit
-  circuit = register.allocation.circuit
-  cregister = bp.ClassicalRegister(len(register))
-  qregister = register.register
-  circuit.add_register(cregister)
-  circuit.measure(qregister, cregister)
-  return MeasurementProxy(circuit, qregister, cregister)
+  if not register in _MEASUREMENT_PROXY_CACHE:
+    circuit = register.allocation.circuit
+    cregister = bp.ClassicalRegister(len(register))
+    qregister = register.register
+    circuit.add_register(cregister)
+    circuit.measure(qregister, cregister)
+    _MEASUREMENT_PROXY_CACHE[register] = MeasurementProxy(circuit, qregister, cregister)
+
+  return _MEASUREMENT_PROXY_CACHE[register]
 
 
 class ResetContext:
@@ -162,3 +147,7 @@ class ResetContext:
 
 def reset(allocation: Allocation) -> ResetContext:
   return ResetContext(allocation)
+
+
+def qasm(item):
+  return item
