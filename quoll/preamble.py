@@ -149,5 +149,11 @@ def reset(allocation: Allocation) -> ResetContext:
   return ResetContext(allocation)
 
 
-def qasm(item):
-  return item
+def qasm(*args, **kwargs):
+  if len(args) == 1 and not len(kwargs) and callable(args[0]):
+    return qasm()(args[0])
+
+  def _decorator(item):
+    return item
+
+  return _decorator

@@ -32,7 +32,7 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], pro
   favorable += histogram.get(' '.join(choice), 0)
   actual_probability = favorable / total
   actual_delta = abs(actual_probability - prob)
-  assert actual_delta < delta, f'Probabilities don\'t match (delta={actual_delta}).'
+  assert actual_delta <= delta, f'Probabilities don\'t match (delta={actual_delta}).'
 
 
 def assertFact(fact, msg):

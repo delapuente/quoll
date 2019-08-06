@@ -6,6 +6,7 @@ import qiskit
 from qiskit import QuantumRegister, QuantumCircuit, BasicAer, ClassicalRegister
 
 import quoll
+import quoll.config
 from quoll.measurements import Measurement, MeasurementProxy
 
 T = TypeVar('T')

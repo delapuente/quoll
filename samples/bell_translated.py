@@ -8,10 +8,18 @@ from quoll.assertions import *
 # The decorator @qasm mark the implementation of a unitary.
 # No parameters means nothing to autogenerate.
 @qasm
-def bell_state(c: Qubit, t: Qubit):
+def bell_state(c, t):
   H(c)
   Controlled[X]([c], t)
 
+
+def _bell_state_adj(c, t):
+  Adjoint[Controlled[X]]([c], t)
+  Adjoint[H](c)
+
+
+setattr(bell_state, '__adj__', _bell_state_adj)
+setattr(_bell_state_adj, '__adj__', bell_state)
 
 # Not a unit, so not translated, so far:
 def test_bell_state():
@@ -39,7 +47,25 @@ def test_bell_state():
       prob=0.5, msg='00 combination should be 50%.',
       delta=1E-1
     )
-    print('Everything is OK! Done.')
+
+
+def test_bell_state_adj():
+ with allocate(1, 1) as (c, t):
+    bell_state(c, t)
+    Adjoint[bell_state](c, t)
+    _mp1 = measure(t)
+    _mp2 = measure(c)
+    _m1, _m2 = bp.execute(_mp1, _mp2)
+    assertProb(
+      [_m1, _m2], [False, False],
+      prob=1, msg='00 combination should be 100%.',
+      delta=0
+    )
+
+def main():
+  test_bell_state()
+  test_bell_state_adj()
+  print('Everything is OK! Done.')
 
 if __name__ == '__main__':
-  test_bell_state()
+  main()
