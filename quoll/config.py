@@ -1,9 +1,10 @@
 import qiskit
 import quoll.boilerplate as bp
 
-qiskit.IBMQ.load_account()
-
-_PROVIDERS = { 'basicaer': qiskit.BasicAer, 'ibmq': qiskit.IBMQ.get_provider() }
+_PROVIDERS = { 'basicaer': qiskit.BasicAer }
+if hasattr(qiskit, 'IBMQ'):
+  qiskit.IBMQ.load_account()
+  _PROVIDERS['ibmq'] = qiskit.IBMQ.get_provider()
 
 _BACKEND = qiskit.BasicAer.get_backend('qasm_simulator')
 
