@@ -205,5 +205,5 @@ def translate(source: str) -> AST:
   module = ast.parse(source)
   context = TranslationContext()
   BodyTranslator(context).visit(module)
-  #print(unparse(module))
+  print(unparse(module))
   return module
