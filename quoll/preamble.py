@@ -58,36 +58,55 @@ class Adjoint(Functor):
       raise RuntimeError(f'{operation} is not a quantum operation')
     return operation.__adj__
 
+from qiskit.extensions.standard.x import XGate
+
 @qasm
 def X(q: QData):
   q.allocation.circuit.x(q.register)
 
 @qasm
-def _X_ctl(control: Sequence[QData], q: QData):
-  #TODO: Extend with toffoli gates to allow multi controlled X.
+def _X_ctl(control: List[QData], q: QData):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
-  if not len(control) or len(control) > 1:
-    raise NotImplementedError(
-      'Current Controlled[X] implementation supports one control qubit only')
-
-  q.allocation.circuit.cx(control[0].register, q.register)
+  _multiplexed_control(XGate, control, q)
 
 setattr(X, '__adj__', X)
 setattr(X, '__ctl__', _X_ctl)
 setattr(_X_ctl, '__adj__', _X_ctl)
 setattr(_X_ctl, '__ctl__', _X_ctl)
 
+from qiskit.extensions.standard.h import HGate
+
 @qasm
 def H(q: QData):
     q.allocation.circuit.h(q.register)
 
+@qasm
+def _H_ctl(control: List[QData], q: QData):
+  #TODO: Provide a decorator for adding the proper runtime signature checks.
+  _multiplexed_control(HGate, control, q)
+
 setattr(H, '__adj__', H)
+setattr(H, '__ctl__', _H_ctl)
+setattr(_H_ctl, '__adj__', _H_ctl)
+setattr(_H_ctl, '__ctl__', _H_ctl)
 
 def R1(angle: float, q: QData):
   pass
 
 def Z(q: QData):
   pass
+
+from qiskit.extensions.standard.iden import IdGate
+from qiskit.extensions.quantum_initializer.ucg import UCG
+
+def _multiplexed_control(gate_class, control: List[QData], target: QData):
+  control_registers = list(map(partial(getattr, name='register'), control))
+  control_patterns_count = 2 ** len(control)
+  gate_list = [
+    IdGate().to_matrix()
+    for _ in range(control_patterns_count - 1)] + [gate_class().to_matrix()]
+  target.allocation.circuit.append(
+    UCG(gate_list, False), [target.register] + control_registers)
 
 def head(l: list):
   return l[0]

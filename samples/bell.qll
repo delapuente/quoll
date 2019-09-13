@@ -2,7 +2,7 @@ from quoll.preamble import *
 from quoll.assertions import *
 
 
-@qasm(adj=True)
+@qasm(adj=True, ctl=True)
 def bell_state(c, t):
   H(c)
   Controlled[X]([c], t)
@@ -31,6 +31,23 @@ def test_bell_state_adj():
       prob=1, msg='00 combination should be 100%.',
       delta=0
     )
+
+def test_controlled_bell():
+  with allocate(1, 1, 1) as (control, bell_control, bell_target):
+    H(control)
+    Controlled[bell_state](control, bell_control, bell_target)
+    test_results = [
+      ([False, False, False], 0.5),
+      ([True, False, False], 0.25),
+      ([True, True, True], 0.25)
+    ]
+    for pattern, prob in test_results:
+      assertProb(
+        [measure(control), measure(bell_control), measure(bell_target)],
+        pattern, prob=prob,
+        msg=f'${pattern} should happend with probability ${prob}.',
+        delta=1E-7
+      )
 
 def main():
   test_bell_state()

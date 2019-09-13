@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from astpretty import pprint
 
-from quoll.unparser import unparse
+import quoll.config
 
 @dataclass
 class TranslationContext:
@@ -200,10 +200,9 @@ def _assign_to_proxy(m_node, proxy_name):
 def _assign_to_measurements(bp_alias, proxy_names, measure_names):
   return ast.parse(f'{", ".join(measure_names)} = {bp_alias}.execute({", ".join(proxy_names)})').body[0]
 
-
+@quoll.config.show_python
 def translate(source: str) -> AST:
   module = ast.parse(source)
   context = TranslationContext()
   BodyTranslator(context).visit(module)
-  print(unparse(module))
   return module
