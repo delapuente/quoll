@@ -3,11 +3,10 @@ from quoll.measurements import Measurement
 
 AnyResult = Union[bool, int]
 
-def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], prob: float, msg: str, delta=1E-3):
+def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], prob: float, msg: str = '', delta=1E-3):
   assert len(measurements) > 0 and len(results) > 0,\
     'Measurements and results length cannot be 0'
 
-  #TODO: Add support for multi qubit registers
   assert len(measurements) == len(results),\
     'Measurements and results have different length.'
 
@@ -15,24 +14,30 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], pro
   total = sum(histogram.values())
 
   circuit = measurements[0].proxy.circuit
-  qregisters = circuit.qregs
-  fixed_indices = tuple(
-    zip((qregisters.index(m.proxy.quantum_register) for m in measurements), results))
-  qubit_count = sum(map(len, circuit.qregs))
-  free_indices_count = qubit_count - len(fixed_indices)
-  if free_indices_count:
-    #TODO: Do something here
+  cregisters = circuit.cregs
+  tested_registers = tuple(
+    zip((cregisters.index(m.proxy.classical_register) for m in measurements), results))
+  total_registers = len(circuit.cregs)
+  untested_registers_count = total_registers - len(tested_registers)
+  if untested_registers_count:
+    #TODO: Renormalize for when not all the registers are tested
     raise NotImplementedError
 
   favorable = 0
-  choice: List[Optional[str]] = [None] * qubit_count
-  for index, value in fixed_indices:
-    choice[index] = '1' if value else '0'
+  choice: List[Optional[str]] = [None] * total_registers
+  for index, value in tested_registers:
+    choice[index] = bin(value)[2:] # Binary representation
 
-  favorable += histogram.get(' '.join(choice), 0)
+  # TODO: choice is little-endian (we need big-endian). Qiskit doc is wrong.
+  favorable += histogram.get(' '.join(reversed(choice)), 0)
   actual_probability = favorable / total
   actual_delta = abs(actual_probability - prob)
-  assert actual_delta <= delta, f'Probabilities don\'t match (delta={actual_delta}).'
+
+  assertion_message = f'Probabilities don\'t match (delta={actual_delta}).'
+  if msg:
+    assertion_message = f'{assertion_message}\n{msg}'
+
+  assert actual_delta <= delta, assertion_message
 
 
 def assertFact(fact, msg):
