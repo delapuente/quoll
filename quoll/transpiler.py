@@ -171,7 +171,7 @@ class BodyTranslator(Translator):
     return node
 
   def visit_FunctionDef(self, node):
-    if _is_qasm(node):
+    if _is_qdef(node):
       fix_location = partial(copy_location, old_node=node)
       new_nodes = [node]
       if _auto_adjoint(node):
@@ -225,11 +225,11 @@ class BodyTranslator(Translator):
     return copy_location(_assign_to_measurements(self._context.boilerplate_alias, proxy_names, measure_names), node)
 
 
-def _is_qasm(node: FunctionDef):
+def _is_qdef(node: FunctionDef):
   return len(node.decorator_list) > 0\
     and isinstance(node.decorator_list[-1], Call)\
     and isinstance(node.decorator_list[-1].func, Name)\
-    and node.decorator_list[-1].func.id == 'qasm'
+    and node.decorator_list[-1].func.id == 'qdef'
 
 
 def _wire_adjoints(node: FunctionDef, adjoint_node: FunctionDef):

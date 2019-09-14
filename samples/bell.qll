@@ -2,7 +2,7 @@ from quoll.preamble import *
 from quoll.assertions import *
 
 
-@qasm(adj=True, ctl=True)
+@qdef(adj=True, ctl=True)
 def bell_state(c, t):
   H(c)
   Controlled[X]([c], t)

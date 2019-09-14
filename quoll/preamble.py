@@ -8,12 +8,12 @@ import quoll.boilerplate as bp
 T = TypeVar('T')
 P = TypeVar('P')
 
-def qasm(*args, **kwargs):
+def qdef(*args, **kwargs):
   if len(args) == 1 and not len(kwargs) and callable(args[0]):
-    return qasm()(args[0])
+    return qdef()(args[0])
 
   def _decorator(item):
-    item.__isqasm__ = True
+    item.__isqdef__ = True
     return item
 
   return _decorator
@@ -45,7 +45,7 @@ class Controlled(Functor):
   #TODO: Add type annotation for operation.
   #TODO: Refine return type with structured typing if possible.
   def __class_getitem__(cls, operation) -> Callable:
-    if not getattr(operation, '__isqasm__', False):
+    if not getattr(operation, '__isqdef__', False):
       raise RuntimeError(f'{operation} is not a quantum operation')
     return operation.__ctl__
 
@@ -54,17 +54,17 @@ class Adjoint(Functor):
   #TODO: Add type annotation for operation.
   #TODO: Refine return type with structured typing if possible.
   def __class_getitem__(cls, operation) -> Callable:
-    if not getattr(operation, '__isqasm__', False):
+    if not getattr(operation, '__isqdef__', False):
       raise RuntimeError(f'{operation} is not a quantum operation')
     return operation.__adj__
 
 from qiskit.extensions.standard.x import XGate
 
-@qasm
+@qdef
 def X(q: QData):
   q.allocation.circuit.x(q.register)
 
-@qasm
+@qdef
 def _X_ctl(control: List[QData], q: QData):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
   _multiplexed_control(XGate, control, q)
@@ -76,11 +76,11 @@ setattr(_X_ctl, '__ctl__', _X_ctl)
 
 from qiskit.extensions.standard.h import HGate
 
-@qasm
+@qdef
 def H(q: QData):
     q.allocation.circuit.h(q.register)
 
-@qasm
+@qdef
 def _H_ctl(control: List[QData], q: QData):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
   _multiplexed_control(HGate, control, q)

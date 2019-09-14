@@ -1,7 +1,7 @@
 from quoll.preamble import *
 from quoll.assertions import *
 
-@qasm(adj=True, ctl=True)
+@qdef(adj=True, ctl=True)
 def config_1010(a, b, c, d):
   # Hypothesis: a, b, c, d are sorted from min to max
   X(d)
