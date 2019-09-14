@@ -100,8 +100,10 @@ from qiskit.extensions.standard.iden import IdGate
 from qiskit.extensions.quantum_initializer.ucg import UCG
 
 def _multiplexed_control(gate_class, control: List[QData], target: QData):
-  control_registers = list(map(partial(getattr, name='register'), control))
-  control_patterns_count = 2 ** len(control)
+  # TODO: Now not considering the order because this is being controlled by
+  # the all 1s sequence.
+  control_registers = list(map(lambda qdata: qdata.register, control))
+  control_patterns_count = 2 ** sum(reg.size for reg in control_registers)
   gate_list = [
     IdGate().to_matrix()
     for _ in range(control_patterns_count - 1)] + [gate_class().to_matrix()]
