@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
 from functools import partial
+from itertools import chain
 
 from quoll.measurements import Measurement, MeasurementProxy
 import quoll.boilerplate as bp
@@ -31,21 +32,36 @@ class AllOneControl:
       other = AllOneControl(other)
     return AllOneControl(*(*self.values, *other.values))
 
+# TODO: This is actually a qubit stream. To be Python consistent, let's change
+# the name to qubits (as in bytes approx.). All other high level values should
+# be built on qubit streams by composition.
+QiskitQubits = Union[bp.QuantumRegister, List[bp.Qubit]]
+
 class QData:
 
   allocation: 'Allocation'
 
-  register: bp.QuantumRegister
+  qiskit_qubits: QiskitQubits
 
-  def __init__(self, allocation: 'Allocation', register: bp.QuantumRegister):
+  def __init__(self, allocation: 'Allocation', qiskit_qubits: QiskitQubits):
     self.allocation = allocation
-    self.register = register
+    self.qiskit_qubits = qiskit_qubits
 
   def __iter__(self):
-    return iter(self.register)
+    return iter(self.qiskit_qubits)
 
   def __len__(self):
-    return len(self.register)
+    return len(self.qiskit_qubits)
+
+  def __getitem__(self, item):
+    if not isinstance(item, slice):
+      return QData(self.allocation, [self.qiskit_qubits[item]])
+
+    return QData(self.allocation, self.qiskit_qubits[item])
+
+  def __add__(self, more_data):
+    return QData(
+      self.allocation, [*self.qiskit_qubits, *more_data.qiskit_qubits])
 
   def __and__(self, other: 'QData') -> AllOneControl:
     return AllOneControl(self, other)
@@ -76,7 +92,7 @@ from qiskit.extensions.standard.x import XGate
 
 @qdef
 def X(q: QData):
-  q.allocation.circuit.x(q.register)
+  q.allocation.circuit.x(q.qiskit_qubits)
 
 @qdef
 def _X_ctl(control: Union[AllOneControl, QData], q: QData):
@@ -92,7 +108,7 @@ from qiskit.extensions.standard.h import HGate
 
 @qdef
 def H(q: QData):
-    q.allocation.circuit.h(q.register)
+    q.allocation.circuit.h(q.qiskit_qubits)
 
 @qdef
 def _H_ctl(control: Union[AllOneControl, QData], q: QData):
@@ -119,13 +135,14 @@ def _multiplexed_control(gate_class, control: Union[AllOneControl, QData], targe
   if isinstance(control, QData):
     control = AllOneControl(control)
 
-  control_registers = tuple(value.register for value in control.values)
-  control_patterns_count = 2 ** sum(reg.size for reg in control_registers)
+  control_qubits = tuple(chain(
+    *(value.qiskit_qubits for value in control.values)))
+  control_patterns_count = 2 ** len(control_qubits)
   gate_list = [
     IdGate().to_matrix()
     for _ in range(control_patterns_count - 1)] + [gate_class().to_matrix()]
   target.allocation.circuit.append(
-    UCG(gate_list, False), (target.register, ) + control_registers)
+    UCG(gate_list, False), (target.qiskit_qubits, ) + control_qubits)
 
 def head(l: list):
   return l[0]
@@ -168,7 +185,7 @@ def measure(register: QData, reset=False) -> MeasurementProxy:
   if not register in _MEASUREMENT_PROXY_CACHE:
     circuit = register.allocation.circuit
     cregister = bp.ClassicalRegister(len(register))
-    qregister = register.register
+    qregister = register.qiskit_qubits
     circuit.add_register(cregister)
     circuit.measure(qregister, cregister)
     _MEASUREMENT_PROXY_CACHE[register] = MeasurementProxy(circuit, qregister, cregister)

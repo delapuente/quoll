@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import qiskit
 from qiskit import QuantumRegister, QuantumCircuit, BasicAer, ClassicalRegister
+from qiskit.circuit import Qubit
 
 import quoll
 import quoll.config
