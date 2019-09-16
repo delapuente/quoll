@@ -19,8 +19,6 @@ class TranslationContext:
 
   allocation_context: List[list] = field(default_factory=lambda: [])
 
-  operation_table: List[str] = field(default_factory=lambda: ['X', 'H'])
-
 
 class Translator(NodeTransformer):
 
@@ -37,13 +35,13 @@ class ControlledComputer(Translator):
     self._control_param_name = control_param_name
 
   def visit_Call(self, node: Call):
-    if _is_operation_call(node, self._context.operation_table):
+    if _is_operation_call(node):
       node.func = copy_location(_wrap_in_controlled(node.func), node)
       node.args.insert(0, copy_location(
         Name(self._control_param_name, ctx=Load()), node.args[0]))
       return node
 
-    if _is_variant_call(node, self._context.operation_table):
+    if _is_variant_call(node):
       functor_application = node.func
       if _identify_signature(functor_application) == 'Id':
         node.func = copy_location(_wrap_in_controlled(node.func), node)
@@ -61,7 +59,7 @@ class ControlledComputer(Translator):
 class AdjointComputer(Translator):
 
   def visit_Call(self, node):
-    if _is_operation_call(node, self._context.operation_table):
+    if _is_operation_call(node):
       node.func = copy_location(_wrap_in_adjoint(node.func), node)
       return node
 
@@ -69,7 +67,7 @@ class AdjointComputer(Translator):
     return node
 
   def visit_Subscript(self, node):
-    if _is_functor_application(node, self._context.operation_table):
+    if _is_functor_application(node):
       return copy_location(_wrap_in_adjoint(node), node)
 
     self.generic_visit(node)
@@ -92,21 +90,20 @@ def _extend_control_data(original_control_data_node, extension_name):
   extended.left = original_control_data_node
   return extended
 
-def _is_operation_call(call, symbol_table):
-  return isinstance(call.func, Name) and call.func.id in symbol_table
+def _is_operation_call(call):
+  return isinstance(call.func, Name)
 
 
 # TODO: A variant is the result of applying a functor to an operation.
-def _is_variant_call(call, symbol_table):
+def _is_variant_call(call):
   return isinstance(call.func, Subscript)\
-    and _is_functor_application(call.func, symbol_table)
+    and _is_functor_application(call.func)
 
-def _is_functor_application(subscript, symbol_table):
+def _is_functor_application(subscript):
   return isinstance(subscript.value, Name)\
     and subscript.value.id in ['Adjoint', 'Controlled']\
     and isinstance(subscript.slice, Index)\
-    and isinstance(subscript.slice.value, Name)\
-    and subscript.slice.value.id in symbol_table\
+    and isinstance(subscript.slice.value, Name)
 
 def _identify_signature(functor_application):
   if not isinstance(functor_application, Subscript):
