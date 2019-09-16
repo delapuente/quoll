@@ -3,7 +3,7 @@ from quoll.assertions import *
 
 @qdef(adj=True, ctl=True)
 def db_oracle(marked_qubit, db_register):
-  Controlled[X]([db_register], marked_qubit)
+  Controlled[X](db_register, marked_qubit)
 
 
 @qdef(adj=True, ctl=True)
@@ -25,7 +25,7 @@ def reflect_marked(marked_qubit):
 
 def reflect_zero(db_register):
   map(X, db_register)
-  Controlled[Z]([db_register[1:]], db_register[0])
+  Controlled[Z](db_register[1:], db_register[0])
   map(X, db_register)
 
 
@@ -51,7 +51,7 @@ def apply_quantum_search(iterations, db_qubits_count) -> Tuple[bool, int]:
 
 
 def state_preparation_oracle_test():
-  for db_size in range(6):
+  for db_size in range(1, 6):
     with allocate(1, db_size) as (marked_qubit, db_register):
       state_preparation_oracle(marked_qubit, db_register)
       success_amplitude = 1.0 / ((2**db_register) ** 0.5)
