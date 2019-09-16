@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping
+from typing import Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
 from functools import partial
 
 from quoll.measurements import Measurement, MeasurementProxy
@@ -20,6 +20,17 @@ def qdef(*args, **kwargs):
 
 #TODO: This and other classes should be abstract class and the whole Qiskit
 # implementation should be injected.
+class AllOneControl:
+  def __init__(self, *values: 'QData'):
+    assert len(values), 'At least one piece of data is needed to control upon it'
+    self.values = values
+
+  def __and__(self, other: 'QData'): ...
+  def __and__(self, other: 'AllOneControl'):
+    if not isinstance(other, AllOneControl):
+      other = AllOneControl(other)
+    return AllOneControl(*(*self.values, *other.values))
+
 class QData:
 
   allocation: 'Allocation'
@@ -35,6 +46,9 @@ class QData:
 
   def __len__(self):
     return len(self.register)
+
+  def __and__(self, other: 'QData') -> AllOneControl:
+    return AllOneControl(self, other)
 
 
 class Functor:
@@ -65,7 +79,7 @@ def X(q: QData):
   q.allocation.circuit.x(q.register)
 
 @qdef
-def _X_ctl(control: List[QData], q: QData):
+def _X_ctl(control: Union[AllOneControl, QData], q: QData):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
   _multiplexed_control(XGate, control, q)
 
@@ -81,7 +95,7 @@ def H(q: QData):
     q.allocation.circuit.h(q.register)
 
 @qdef
-def _H_ctl(control: List[QData], q: QData):
+def _H_ctl(control: Union[AllOneControl, QData], q: QData):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
   _multiplexed_control(HGate, control, q)
 
@@ -99,16 +113,19 @@ def Z(q: QData):
 from qiskit.extensions.standard.iden import IdGate
 from qiskit.extensions.quantum_initializer.ucg import UCG
 
-def _multiplexed_control(gate_class, control: List[QData], target: QData):
+def _multiplexed_control(gate_class, control: Union[AllOneControl, QData], target: QData):
   # TODO: Now not considering the order because this is being controlled by
   # the all 1s sequence.
-  control_registers = list(map(lambda qdata: qdata.register, control))
+  if isinstance(control, QData):
+    control = AllOneControl(control)
+
+  control_registers = tuple(value.register for value in control.values)
   control_patterns_count = 2 ** sum(reg.size for reg in control_registers)
   gate_list = [
     IdGate().to_matrix()
     for _ in range(control_patterns_count - 1)] + [gate_class().to_matrix()]
   target.allocation.circuit.append(
-    UCG(gate_list, False), [target.register] + control_registers)
+    UCG(gate_list, False), (target.register, ) + control_registers)
 
 def head(l: list):
   return l[0]

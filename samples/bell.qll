@@ -5,7 +5,7 @@ from quoll.assertions import *
 @qdef(adj=True, ctl=True)
 def bell_state(c, t):
   H(c)
-  Controlled[X]([c], t)
+  Controlled[X](c, t)
 
 def test_bell_state():
   with allocate(1, 1) as (c, t):
@@ -34,7 +34,7 @@ def test_bell_state_adj():
 def test_controlled_bell():
   with allocate(1, 1, 1) as (control, bell_control, bell_target):
     H(control)
-    Controlled[bell_state]([control], bell_control, bell_target)
+    Controlled[bell_state](control, bell_control, bell_target)
     test_results = [
       ([False, False, False], 0.5),
       ([True, False, False], 0.25),

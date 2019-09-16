@@ -86,7 +86,7 @@ def _wrap_in_functor(node, name):
   return wrapper
 
 def _extend_control_data(original_control_data_node, extension_name):
-  extended = ast.parse(f'(_) + {extension_name}').body[0].value
+  extended = ast.parse(f'(_) & {extension_name}').body[0].value
   extended.left = original_control_data_node
   return extended
 
