@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
+from typing import overload, Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
 from functools import partial
 from itertools import chain
 
@@ -26,8 +26,13 @@ class AllOneControl:
     assert len(values), 'At least one piece of data is needed to control upon it'
     self.values = values
 
-  def __and__(self, other: 'QData'): ...
-  def __and__(self, other: 'AllOneControl'):
+  @overload
+  def __and__(self, other: 'QData') -> 'AllOneControl': ...
+
+  @overload
+  def __and__(self, other: 'AllOneControl') -> 'AllOneControl': ...
+
+  def __and__(self, other: Union['QData', 'AllOneControl']) -> 'AllOneControl':
     if not isinstance(other, AllOneControl):
       other = AllOneControl(other)
     return AllOneControl(*(*self.values, *other.values))
@@ -41,11 +46,11 @@ class QData:
 
   allocation: 'Allocation'
 
-  qiskit_qubits: QiskitQubits
+  qiskit_qubits: List[bp.Qubit]
 
   def __init__(self, allocation: 'Allocation', qiskit_qubits: QiskitQubits):
     self.allocation = allocation
-    self.qiskit_qubits = qiskit_qubits
+    self.qiskit_qubits = [*qiskit_qubits]
 
   def __iter__(self):
     return iter(self.qiskit_qubits)
