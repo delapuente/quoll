@@ -22,27 +22,26 @@ def qdef(*args, **kwargs):
 #TODO: This and other classes should be abstract class and the whole Qiskit
 # implementation should be injected.
 class AllOneControl:
-  def __init__(self, *values: 'QData'):
+  def __init__(self, *values: 'Qubits'):
     assert len(values), 'At least one piece of data is needed to control upon it'
     self.values = values
 
   @overload
-  def __and__(self, other: 'QData') -> 'AllOneControl': ...
+  def __and__(self, other: 'Qubits') -> 'AllOneControl': ...
 
   @overload
   def __and__(self, other: 'AllOneControl') -> 'AllOneControl': ...
 
-  def __and__(self, other: Union['QData', 'AllOneControl']) -> 'AllOneControl':
+  def __and__(self, other: Union['Qubits', 'AllOneControl']) -> 'AllOneControl':
     if not isinstance(other, AllOneControl):
       other = AllOneControl(other)
     return AllOneControl(*(*self.values, *other.values))
 
-# TODO: This is actually a qubit stream. To be Python consistent, let's change
-# the name to qubits (as in bytes approx.). All other high level values should
-# be built on qubit streams by composition.
+
 QiskitQubits = Union[bp.QuantumRegister, List[bp.Qubit]]
 
-class QData:
+
+class Qubits:
 
   allocation: 'Allocation'
 
@@ -60,15 +59,15 @@ class QData:
 
   def __getitem__(self, item):
     if not isinstance(item, slice):
-      return QData(self.allocation, [self.qiskit_qubits[item]])
+      return Qubits(self.allocation, [self.qiskit_qubits[item]])
 
-    return QData(self.allocation, self.qiskit_qubits[item])
+    return Qubits(self.allocation, self.qiskit_qubits[item])
 
   def __add__(self, more_data):
-    return QData(
+    return Qubits(
       self.allocation, [*self.qiskit_qubits, *more_data.qiskit_qubits])
 
-  def __and__(self, other: 'QData') -> AllOneControl:
+  def __and__(self, other: 'Qubits') -> AllOneControl:
     return AllOneControl(self, other)
 
 
@@ -96,11 +95,11 @@ class Adjoint(Functor):
 from qiskit.extensions.standard.x import XGate
 
 @qdef
-def X(q: QData):
+def X(q: Qubits):
   q.allocation.circuit.x(q.qiskit_qubits)
 
 @qdef
-def _X_ctl(control: Union[AllOneControl, QData], q: QData):
+def _X_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
   _multiplexed_control(XGate, control, q)
 
@@ -112,11 +111,11 @@ setattr(_X_ctl, '__ctl__', _X_ctl)
 from qiskit.extensions.standard.h import HGate
 
 @qdef
-def H(q: QData):
+def H(q: Qubits):
     q.allocation.circuit.h(q.qiskit_qubits)
 
 @qdef
-def _H_ctl(control: Union[AllOneControl, QData], q: QData):
+def _H_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
   _multiplexed_control(HGate, control, q)
 
@@ -125,19 +124,19 @@ setattr(H, '__ctl__', _H_ctl)
 setattr(_H_ctl, '__adj__', _H_ctl)
 setattr(_H_ctl, '__ctl__', _H_ctl)
 
-def R1(angle: float, q: QData):
+def R1(angle: float, q: Qubits):
   pass
 
-def Z(q: QData):
+def Z(q: Qubits):
   pass
 
 from qiskit.extensions.standard.iden import IdGate
 from qiskit.extensions.quantum_initializer.ucg import UCG
 
-def _multiplexed_control(gate_class, control: Union[AllOneControl, QData], target: QData):
+def _multiplexed_control(gate_class, control: Union[AllOneControl, Qubits], target: Qubits):
   # TODO: Now not considering the order because this is being controlled by
   # the all 1s sequence.
-  if isinstance(control, QData):
+  if isinstance(control, Qubits):
     control = AllOneControl(control)
 
   control_qubits = tuple(chain(
@@ -163,13 +162,13 @@ class Allocation:
 
   circuit: bp.QuantumCircuit
 
-  qubits: Tuple[QData, ...]
+  qubits: Tuple[Qubits, ...]
 
   def __init__(self, *sizes: int):
     registers = bp.new_registers(*sizes)
     circuit = bp.new_circuit_with_registers(registers)
     self.circuit = circuit
-    self.qubits = tuple(map(partial(QData, self), registers))
+    self.qubits = tuple(map(partial(Qubits, self), registers))
 
   def __enter__(self):
     return self
@@ -177,16 +176,16 @@ class Allocation:
   def __exit__(self, *_):
     pass
 
-  def __iter__(self) -> Iterable[QData]:
+  def __iter__(self) -> Iterable[Qubits]:
     return iter(self.qubits)
 
 def allocate(*sizes: int) -> Allocation:
   return Allocation(*sizes)
 
 
-_MEASUREMENT_PROXY_CACHE: MutableMapping[QData, MeasurementProxy] = {}
+_MEASUREMENT_PROXY_CACHE: MutableMapping[Qubits, MeasurementProxy] = {}
 
-def measure(register: QData, reset=False) -> MeasurementProxy:
+def measure(register: Qubits, reset=False) -> MeasurementProxy:
   if not register in _MEASUREMENT_PROXY_CACHE:
     circuit = register.allocation.circuit
     cregister = bp.ClassicalRegister(len(register))
