@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import overload, Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
-from functools import partial
-from itertools import chain
+from functools import partial, wraps
+from itertools import chain, repeat
+from inspect import signature
 
 from quoll.measurements import Measurement, MeasurementProxy
 import quoll.boilerplate as bp
@@ -51,9 +52,6 @@ class Qubits:
     self.allocation = allocation
     self.qiskit_qubits = [*qiskit_qubits]
 
-  def __iter__(self):
-    return iter(self.qiskit_qubits)
-
   def __len__(self):
     return len(self.qiskit_qubits)
 
@@ -101,12 +99,9 @@ def X(q: Qubits):
 @qdef
 def _X_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
-  _multiplexed_control(XGate, control, q)
+  _multiplexed_control(XGate(), control, q)
 
-setattr(X, '__adj__', X)
-setattr(X, '__ctl__', _X_ctl)
-setattr(_X_ctl, '__adj__', _X_ctl)
-setattr(_X_ctl, '__ctl__', _X_ctl)
+bp.wire_functors(X, X, _X_ctl)
 
 from qiskit.extensions.standard.h import HGate
 
@@ -117,23 +112,46 @@ def H(q: Qubits):
 @qdef
 def _H_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
   #TODO: Provide a decorator for adding the proper runtime signature checks.
-  _multiplexed_control(HGate, control, q)
+  _multiplexed_control(HGate(), control, q)
 
-setattr(H, '__adj__', H)
-setattr(H, '__ctl__', _H_ctl)
-setattr(_H_ctl, '__adj__', _H_ctl)
-setattr(_H_ctl, '__ctl__', _H_ctl)
+bp.wire_functors(H, H, _H_ctl)
 
+from qiskit.extensions.standard.u1 import U1Gate
+
+@qdef
 def R1(angle: float, q: Qubits):
-  pass
+  q.allocation.circuit.u1(angle, q.qiskit_qubits)
 
+@qdef
+def _R1_adj(angle: float, q: Qubits):
+  q.allocation.circuit.append(U1Gate(angle).inverse(), [q.qiskit_qubits])
+
+@qdef
+def _R1_adj_ctl(control: Union[AllOneControl, Qubits], angle: float, q: Qubits):
+  _multiplexed_control(U1Gate(angle).inverse(), control, q)
+
+@qdef
+def _R1_ctl(control: Union[AllOneControl, Qubits], angle: float, q: Qubits):
+  _multiplexed_control(U1Gate(angle), control, q)
+
+bp.wire_functors(R1, _R1_adj, _R1_ctl, _R1_adj_ctl)
+
+from qiskit.extensions.standard.z import ZGate
+
+@qdef
 def Z(q: Qubits):
-  pass
+  q.allocation.circuit.z(q.qiskit_qubits)
+
+@qdef
+def _Z_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
+  _multiplexed_control(ZGate(), control, q)
+
+bp.wire_functors(Z, Z, _Z_ctl)
 
 from qiskit.extensions.standard.iden import IdGate
 from qiskit.extensions.quantum_initializer.ucg import UCG
 
-def _multiplexed_control(gate_class, control: Union[AllOneControl, Qubits], target: Qubits):
+def _multiplexed_control(gate, control: Union[AllOneControl, Qubits], target: Qubits):
   # TODO: Now not considering the order because this is being controlled by
   # the all 1s sequence.
   if isinstance(control, Qubits):
@@ -144,7 +162,7 @@ def _multiplexed_control(gate_class, control: Union[AllOneControl, Qubits], targ
   control_patterns_count = 2 ** len(control_qubits)
   gate_list = [
     IdGate().to_matrix()
-    for _ in range(control_patterns_count - 1)] + [gate_class().to_matrix()]
+    for _ in range(control_patterns_count - 1)] + [gate.to_matrix()]
   target.allocation.circuit.append(
     UCG(gate_list, False), (target.qiskit_qubits, ) + control_qubits)
 
@@ -213,3 +231,27 @@ class ResetContext:
 def reset(allocation: Allocation) -> ResetContext:
   return ResetContext(allocation)
 
+
+# TODO: Reinterpreted Python builtins
+_PYTHON_MAP = map
+
+@qdef
+def map(f, *iterables):
+  if not getattr(f, '__isqdef__', False):
+    return _PYTHON_MAP(f, *iterables)
+
+  list(_PYTHON_MAP(f, *iterables))
+
+@qdef
+def _map_adj(f, *iterables):
+  list(_PYTHON_MAP(Adjoint[f], *iterables))
+
+@qdef
+def _map_ctl(control, f, *iterables):
+  list(_PYTHON_MAP(Controlled[f], repeat(control), *iterables))
+
+@qdef
+def _map_adj_ctl(control, f, *iterables):
+  list(_PYTHON_MAP(Adjoint[Controlled[f]], repeat(control), *iterables))
+
+bp.wire_functors(map, _map_adj, _map_ctl, _map_adj_ctl)
