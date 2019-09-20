@@ -1,3 +1,4 @@
+import itertools
 from typing import Union, Sequence, List, Optional, cast
 from quoll.measurements import Measurement
 
@@ -17,19 +18,18 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], pro
   cregisters = circuit.cregs
   tested_registers = tuple(
     zip((cregisters.index(m.proxy.classical_register) for m in measurements), results))
-  total_registers = len(circuit.cregs)
+  total_registers = len(cregisters)
   untested_registers_count = total_registers - len(tested_registers)
-  if untested_registers_count:
-    #TODO: Renormalize for when not all the registers are tested
-    raise NotImplementedError
 
   favorable = 0
   choice: List[Optional[str]] = [None] * total_registers
   for index, value in tested_registers:
     choice[index] = bin(value)[2:] # Binary representation
 
-  # TODO: choice is little-endian (we need big-endian). Qiskit doc is wrong.
-  favorable += histogram.get(' '.join(reversed(choice)), 0)
+  for one_choice in _expand_choices([*choice], cregisters):
+    # TODO: choice is little-endian (we need big-endian). Qiskit doc is wrong.
+    favorable += histogram.get(' '.join(reversed(one_choice)), 0)
+
   actual_probability = favorable / total
   actual_delta = abs(actual_probability - prob)
 
@@ -42,3 +42,28 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], pro
 
 def assertFact(fact, msg):
   assert fact, msg
+
+
+# TODO: Handling undefined measurements can be a total waste in memory.
+# I think we should work with integers and bit operations but let's see
+# how this behaves so far.
+def _expand_choices(choice, cregisters):
+  undefined_positions = [
+    (index, cregisters[index].size)
+    for index, item in enumerate(choice) if item is None]
+
+  undefined_count = sum(size for _, size in undefined_positions)
+  undefined_combinations_count = 2**undefined_count
+  for combination in range(undefined_combinations_count):
+    yield _fill(choice, undefined_positions, combination)
+
+def _fill(template, placeholders, combination):
+  remaining_binarystring = bin(combination)[2:]
+  for index, size in placeholders:
+    binarystring, remaining_binarystring = _take(remaining_binarystring, size)
+    template[index] = binarystring
+
+  return template
+
+def _take(binarystring, size):
+  return binarystring[:size], binarystring[size:]
