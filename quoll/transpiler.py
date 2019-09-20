@@ -282,7 +282,8 @@ def _assign_to_proxy(m_node, proxy_name):
 
 
 def _assign_to_measurements(bp_alias, proxy_names, measure_names):
-  return ast.parse(f'{", ".join(measure_names)} = {bp_alias}.execute({", ".join(proxy_names)})').body[0]
+  last_comma = ',' if len(measure_names) == 1 else ''
+  return ast.parse(f'({", ".join(measure_names) + last_comma}) = {bp_alias}.execute({", ".join(proxy_names)})').body[0]
 
 @quoll.config.show_python
 def translate(source: str) -> AST:
