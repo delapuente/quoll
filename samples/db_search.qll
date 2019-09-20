@@ -31,7 +31,7 @@ def reflect_zero(db_register):
 
 def reflect_start(marked_qubit, db_register):
   Adjoint[state_preparation_oracle](marked_qubit, db_register)
-  reflect_zero([marked_qubit] + db_register)
+  reflect_zero(marked_qubit + db_register)
   state_preparation_oracle(marked_qubit, db_register)
 
 
@@ -54,7 +54,7 @@ def state_preparation_oracle_test():
   for db_size in range(1, 6):
     with allocate(1, db_size) as (marked_qubit, db_register):
       state_preparation_oracle(marked_qubit, db_register)
-      success_amplitude = 1.0 / ((2**db_register) ** 0.5)
+      success_amplitude = 1.0 / ((2**len(db_register)) ** 0.5)
       success_probability = success_amplitude ** 2
       assertProb(
         [measure(marked_qubit)], [True],
@@ -66,8 +66,8 @@ def state_preparation_oracle_test():
 def grover_hard_coded_test():
   from math import sin, asin, sqrt
 
-  for db_size in range(5):
-    for iterations in range(6):
+  for db_size in range(1, 5):
+    for iterations in range(1, 6):
       with allocate(1, db_size) as (marked_qubit, db_register):
         quantum_search(iterations, marked_qubit, db_register)
         success_amplitude = sin(
@@ -79,11 +79,9 @@ def grover_hard_coded_test():
           msg="Error: Success probability does not match theory",
           delta=1E-1)
 
-        result = measure(marked_qubit)
-        if result:
-          results = [measure(q) for q in db_register]
+        if measure(marked_qubit):
           assertFact(
-            all(results),
+            int(measure(db_register)) == 2**len(db_register) - 1,
             msg='Found state should be 1..1 string.')
 
 
