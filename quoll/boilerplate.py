@@ -28,3 +28,20 @@ def new_circuit_with_registers(registers: Iterable[QuantumRegister]) -> QuantumC
 
 def new_registers(*sizes) -> Tuple[QuantumRegister, ...]:
   return tuple(map(QuantumRegister, sizes))
+
+def wire_functors(operation, adjoint=None, controlled=None, adjoint_controlled=None):
+  if operation == adjoint and controlled and not adjoint_controlled:
+    adjoint_controlled = controlled
+
+  if adjoint:
+    setattr(operation, '__adj__', adjoint)
+    setattr(adjoint, '__adj__', operation)
+
+  if controlled:
+    setattr(operation, '__ctl__', controlled)
+    setattr(controlled, '__ctl__', controlled)
+
+  if controlled and adjoint:
+    assert adjoint_controlled is not None, 'Missing implementation of adjoing controlled'
+    setattr(adjoint, '__ctl__', adjoint_controlled)
+    setattr(controlled, '__adj__', adjoint_controlled)
