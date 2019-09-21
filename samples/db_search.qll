@@ -3,7 +3,7 @@ from quoll.assertions import *
 
 @qdef(adj=True, ctl=True)
 def db_oracle(marked_qubit, db_register):
-  if control(db_register == db_register.all_ones_value()):
+  if control(db_register.is_max()):
     X(marked_qubit)
 
 

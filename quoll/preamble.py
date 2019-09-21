@@ -78,6 +78,9 @@ class Qubits:
   def all_ones_value(self) -> int:
     return 2**len(self) - 1
 
+  def is_max_value(self):
+    return self == self.all_ones_value()
+
   def __eq__(self, another: object) -> Union[QComparison, bool]:
     # TODO: Add support for comparing two registers. May require extending
     # the allocation with ancilla. Should be transparent for the user.
