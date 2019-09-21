@@ -1,4 +1,5 @@
-from typing import Any, List
+from collections import defaultdict
+from typing import Any, List, Dict
 import ast
 from ast import AST, dump, NodeTransformer, copy_location, Call, Name, Load, With, FunctionDef, NameConstant, Index, Subscript, arg, Expression
 from functools import partial
@@ -18,6 +19,18 @@ class TranslationContext:
   measurement_hoisting_table: List[list] = field(default_factory=lambda: [])
 
   allocation_context: List[list] = field(default_factory=lambda: [])
+
+  _UNIQUE_NAME_COUNTER: Dict[str, int] = field(default_factory=lambda: defaultdict(lambda: 0))
+
+  # TODO: Improve to be unique per scope. Now it is globally unique per compilation.
+  def newname(self, name):
+    count = self._UNIQUE_NAME_COUNTER[name]
+    self._UNIQUE_NAME_COUNTER[name] += 1
+
+    if count == 0:
+      return name
+
+    return f'{name}_{count}'
 
 
 class Translator(NodeTransformer):
@@ -204,7 +217,7 @@ class BodyTranslator(Translator):
     adjoint = copy.deepcopy(node)
     adjoint.name = f'_{node.name}_ctl'
     # TODO: Calculate a unique name for the control parameter
-    control_param_name = '__control'
+    control_param_name = self._context.newname('__control')
     adjoint.args.args.insert(
       0, copy_location(arg(control_param_name, annotation=None), node))
     adjoint.decorator_list = []
