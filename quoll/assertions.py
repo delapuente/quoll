@@ -52,13 +52,14 @@ def _expand_choices(choice, cregisters):
     (index, cregisters[index].size)
     for index, item in enumerate(choice) if item is None]
 
-  undefined_count = sum(size for _, size in undefined_positions)
-  undefined_combinations_count = 2**undefined_count
+  undefined_qubits_count = sum(size for _, size in undefined_positions)
+  undefined_combinations_count = 2**undefined_qubits_count
   for combination in range(undefined_combinations_count):
-    yield _fill(choice, undefined_positions, combination)
+    yield _fill(
+      choice, undefined_positions, combination, undefined_qubits_count)
 
-def _fill(template, placeholders, combination):
-  remaining_binarystring = bin(combination)[2:]
+def _fill(template, placeholders, combination, width):
+  remaining_binarystring = bin(combination)[2:].rjust(width, '0')
   for index, size in placeholders:
     binarystring, remaining_binarystring = _take(remaining_binarystring, size)
     template[index] = binarystring
