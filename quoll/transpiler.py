@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, List, Dict
 import ast
-from ast import AST, dump, NodeTransformer, copy_location, Call, Name, Load, With, FunctionDef, NameConstant, Index, Subscript, arg, Expression
+from ast import AST, dump, NodeTransformer, copy_location, Call, Name, Load, With, FunctionDef, NameConstant, Index, Subscript, arg, Expression, If, Suite
 from functools import partial
 from dataclasses import dataclass, field
 
@@ -171,6 +171,21 @@ class BodyTranslator(Translator):
     self.generic_visit(node)
     return node
 
+  def visit_If(self, node: If):
+    if _is_control(node):
+      control_name = self._context.newname('__control')
+      # TODO: Add support for elif/else clauses
+      assert len(node.orelse) == 0, 'Still no support for elif/else clauses'
+      context_node = _control_context_node(node, control_name)
+      # TODO: Add support for a more general combination of things that happen
+      # inside a Quoll statement or control what can appear in these structures
+      # and fail when needed.
+      controlled_body = ControlledComputer(self._context, control_param_name=control_name).visit(Suite(node.body)).body
+      context_node.body = controlled_body
+      return context_node
+
+    return self.generic_visit(node)
+
   def visit_Call(self, node: Call):
     self.generic_visit(node)
     if _is_measurement(node):
@@ -180,9 +195,10 @@ class BodyTranslator(Translator):
 
     return node
 
-  def visit_FunctionDef(self, node):
+  def visit_FunctionDef(self, node: FunctionDef):
     if _is_qdef(node):
       fix_location = partial(copy_location, old_node=node)
+      node.body = self.generic_visit(Suite(node.body)).body
       new_nodes = [node]
       if _auto_adjoint(node):
         adjoint_implementation = fix_location(self._compute_adjoint(node))
@@ -216,7 +232,6 @@ class BodyTranslator(Translator):
     import copy
     adjoint = copy.deepcopy(node)
     adjoint.name = f'_{node.name}_ctl'
-    # TODO: Calculate a unique name for the control parameter
     control_param_name = self._context.newname('__control')
     adjoint.args.args.insert(
       0, copy_location(arg(control_param_name, annotation=None), node))
@@ -272,6 +287,7 @@ def _some_kw_match(name, value, kwargs):
 
   return any(map(id_is_adj, kwargs))
 
+
 def _is_measurement(node: Call):
   return isinstance(node.func, Name) and node.func.id == 'measure'
 
@@ -280,9 +296,18 @@ def _is_allocation(node: With):
   return isinstance(node.items[0].context_expr, Call) and isinstance(node.items[0].context_expr.func, Name) and node.items[0].context_expr.func.id == 'allocate'
 
 
+def _is_control(node: If):
+  return isinstance(node.test, Call) and isinstance(node.test.func, Name) and node.test.func.id == 'control'
+
+
 def _import_boilerplate(alias: str ='bp'):
   return ast.parse(f'import quoll.boilerplate as {alias}', mode='single').body[0]
 
+
+def _control_context_node(node: If, control_param_name: str) -> With:
+  context_node = ast.parse(f'with control(_) as {control_param_name}: ...', mode='exec').body[0]
+  context_node.items[0].context_expr.args[0] = node.test.args[0]
+  return context_node
 
 def _replace_measurement(name: str):
   return ast.parse(name, mode='single').body[0].value

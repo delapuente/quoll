@@ -3,7 +3,8 @@ from quoll.assertions import *
 
 @qdef(adj=True, ctl=True)
 def db_oracle(marked_qubit, db_register):
-  Controlled[X](db_register, marked_qubit)
+  if control(db_register == db_register.all_ones_value()):
+    X(marked_qubit)
 
 
 @qdef(adj=True, ctl=True)

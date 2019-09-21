@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import overload, Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
 from functools import partial, wraps
 from itertools import chain, repeat
-from inspect import signature
+from contextlib import contextmanager
 
 from quoll.measurements import Measurement, MeasurementProxy
 import quoll.boilerplate as bp
@@ -273,3 +273,27 @@ def _map_adj_ctl(control, f, *iterables):
   list(_PYTHON_MAP(Adjoint[Controlled[f]], repeat(control), *iterables))
 
 bp.wire_functors(map, _map_adj, _map_ctl, _map_adj_ctl)
+
+@qdef
+@contextmanager
+def control(comp: QComparison):
+  yield from _map_on_zero_valued_indices(X, comp)
+
+@qdef
+@contextmanager
+def _control_ctl(control: Qubits, comp: QComparison):
+  yield from _map_on_zero_valued_indices(partial(X, control), comp)
+
+bp.wire_functors(control, control, _control_ctl)
+
+def _map_on_zero_valued_indices(gate, comp: QComparison):
+  qubits = comp.qubits
+  int_binarystring = bin(comp.integer)[2:].rjust(len(qubits), '0')
+  for stage in ['enter', 'exit']:
+    # set/unset anticontrols
+    for index, char in enumerate(reversed(int_binarystring)):
+      if char == '0':
+        gate(qubits[index])
+
+    if stage == 'enter':
+      yield qubits
