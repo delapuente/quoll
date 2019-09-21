@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
+from dataclasses import dataclass
 from typing import overload, Type, TypeVar, Generic, Iterable, List, Callable, Tuple, Sequence, MutableMapping, Union
 from functools import partial, wraps
 from itertools import chain, repeat
@@ -39,6 +40,12 @@ class AllOneControl:
     return AllOneControl(*(*self.values, *other.values))
 
 
+@dataclass
+class QComparison:
+  qubits: 'Qubits'
+
+  integer: int
+
 QiskitQubits = Union[bp.QuantumRegister, List[bp.Qubit]]
 
 
@@ -70,6 +77,14 @@ class Qubits:
 
   def all_ones_value(self) -> int:
     return 2**len(self) - 1
+
+  def __eq__(self, another: object) -> Union[QComparison, bool]:
+    # TODO: Add support for comparing two registers. May require extending
+    # the allocation with ancilla. Should be transparent for the user.
+    if isinstance(another, int):
+      return QComparison(self, another)
+
+    return super().__eq__(another)
 
 class Functor:
   pass
@@ -203,18 +218,19 @@ def allocate(*sizes: int) -> Allocation:
   return Allocation(*sizes)
 
 
-_MEASUREMENT_PROXY_CACHE: MutableMapping[Qubits, MeasurementProxy] = {}
+_MEASUREMENT_PROXY_CACHE: MutableMapping[object, MeasurementProxy] = {}
 
 def measure(register: Qubits, reset=False) -> MeasurementProxy:
-  if not register in _MEASUREMENT_PROXY_CACHE:
+  key = (*register.qiskit_qubits,)
+  if not key in _MEASUREMENT_PROXY_CACHE:
     circuit = register.allocation.circuit
     cregister = bp.ClassicalRegister(len(register))
     qregister = register.qiskit_qubits
     circuit.add_register(cregister)
     circuit.measure(qregister, cregister)
-    _MEASUREMENT_PROXY_CACHE[register] = MeasurementProxy(circuit, qregister, cregister)
+    _MEASUREMENT_PROXY_CACHE[key] = MeasurementProxy(circuit, qregister, cregister)
 
-  return _MEASUREMENT_PROXY_CACHE[register]
+  return _MEASUREMENT_PROXY_CACHE[key]
 
 
 class ResetContext:
