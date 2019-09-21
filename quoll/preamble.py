@@ -68,6 +68,8 @@ class Qubits:
   def __and__(self, other: 'Qubits') -> AllOneControl:
     return AllOneControl(self, other)
 
+  def all_ones_value(self) -> int:
+    return 2**len(self) - 1
 
 class Functor:
   pass

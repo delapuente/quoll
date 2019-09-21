@@ -45,8 +45,8 @@ def quantum_search(iterations, marked_qubit, db_register):
 def apply_quantum_search(iterations, db_qubits_count) -> Tuple[bool, int]:
   with allocate(1, db_qubits_count) as (marked_qubit, db_register):
     quantum_search(iterations, marked_qubit, db_register)
-    result_success = measure(marked_qubit, reset=True)
-    result_element = measure(db_register, reset=True)
+    result_success = measure(marked_qubit)
+    result_element = measure(db_register)
     return bool(result_success), int(result_element)
 
 
@@ -81,7 +81,7 @@ def grover_hard_coded_test():
 
         if measure(marked_qubit):
           assertFact(
-            int(measure(db_register)) == 2**len(db_register) - 1,
+            measure(db_register) == db_register.all_ones_value(),
             msg='Found state should be 1..1 string.')
 
 

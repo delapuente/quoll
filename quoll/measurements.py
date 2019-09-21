@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Tuple
+from typing import Tuple, Union
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
@@ -36,3 +36,12 @@ class Measurement:
 
   def __bool__(self):
     return bool(int(self))
+
+  def __eq__(self, another: object) -> bool:
+    if isinstance(another, int):
+      return int(self) == another
+
+    if isinstance(another, bool):
+      return bool(self) == another
+
+    return super().__eq__(another)
