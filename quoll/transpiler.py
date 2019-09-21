@@ -324,7 +324,7 @@ def _assign_to_measurements(bp_alias, proxy_names, measure_names):
   return ast.parse(f'({", ".join(measure_names) + last_comma}) = {bp_alias}.execute({", ".join(proxy_names)})').body[0]
 
 @quoll.config.show_python
-def translate(source: str) -> AST:
+def translate(source: str, path: str) -> AST:
   module = ast.parse(source)
   context = TranslationContext()
   BodyTranslator(context).visit(module)

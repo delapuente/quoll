@@ -11,7 +11,6 @@ if hasattr(qiskit, 'IBMQ'):
 _BACKEND = qiskit.BasicAer.get_backend('qasm_simulator')
 
 _SHOW_PYTHON = False
-_SHOW_PYTHON_DESTINATION = None
 
 def get_backend():
   return _BACKEND
@@ -27,29 +26,24 @@ def resolve_backend(provider_name, backend_name):
   provider = _PROVIDERS[provider_name]
   return provider.get_backend(backend_name)
 
-def set_show_python(enabled, filepath=''):
-  global _SHOW_PYTHON, _SHOW_PYTHON_DESTINATION
-
+def set_show_python(enabled):
+  global _SHOW_PYTHON
   _SHOW_PYTHON = enabled
-  if _SHOW_PYTHON:
-    _SHOW_PYTHON_DESTINATION = filepath
 
-def show_python(module_factory):
-  def _decorated(*args, **kwargs):
-    module = module_factory(*args, **kwargs)
+def show_python(translate_fn):
+  def _decorated(source, path):
+    module = translate_fn(source, path)
     if _SHOW_PYTHON:
-      _print_python(module, _SHOW_PYTHON_DESTINATION)
+      generated_python_path = f'{path}.py'
+      _print_python(module, generated_python_path)
     return module
 
   return _decorated
 
 def _print_python(module, path):
-  if path == '-':
-    print(unparse(module))
-  else:
-    abspath = _resolve_path(os.getcwd(), path)
-    with open(abspath, 'w') as file_:
-      print(unparse(module), file=file_)
+  abspath = _resolve_path(os.getcwd(), path)
+  with open(abspath, 'w') as file_:
+    print(unparse(module), file=file_)
 
 def _resolve_path(current, relative):
   if os.path.isabs(relative):
