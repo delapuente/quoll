@@ -289,7 +289,7 @@ def control(comp: QComparison):
 @qdef
 @contextmanager
 def _control_ctl(control: Qubits, comp: QComparison):
-  yield from _map_on_zero_valued_indices(partial(X, control), comp)
+  yield from _map_on_zero_valued_indices(partial(X.__ctl__, control), comp)
 
 bp.wire_functors(control, control, _control_ctl)
 
