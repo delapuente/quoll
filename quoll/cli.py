@@ -13,7 +13,7 @@ import quoll.activate
 
 def build_parser():
   parser = ArgumentParser()
-  parser.add_argument('modulefunc', type=str, help='function path in the format \'package.module:function_name\'')
+  parser.add_argument('modulefunc', type=str, help='function path in the format \'package.module:function_name\'. If omitting function_name, it defaults to \'main\'.')
   parser.add_argument('-b', '--backend', type=str, help='backend name the format \'provider:backend_name\'')
   parser.add_argument('--show-python', action='store_true', help='generates *.qll.py files with the Python transpiled version of the source.')
   return parser
@@ -28,7 +28,12 @@ def main():
     backend = quoll.config.resolve_backend(provider, backend_name)
     quoll.config.set_backend(backend)
 
-  module_name, function_name = args.modulefunc.split(':')
+  module_and_function = args.modulefunc.split(':')
+  if len(module_and_function) == 2:
+    module_name, function_name = module_and_function
+  else:
+    module_name, function_name = module_and_function[0], 'main'
+
   module = import_module(module_name)
   function = getattr(module, function_name)
   function()
