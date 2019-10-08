@@ -20,6 +20,8 @@ class TranslationContext:
 
   allocation_context: List[list] = field(default_factory=lambda: [])
 
+  inside_class_body: bool = False
+
   _UNIQUE_NAME_COUNTER: Dict[str, int] = field(default_factory=lambda: defaultdict(lambda: 0))
 
   # TODO: Improve to be unique per scope. Now it is globally unique per compilation.
@@ -131,6 +133,12 @@ def _identify_signature(functor_application):
 
 class BodyTranslator(Translator):
 
+  def visit_ClassDef(self, node):
+    self._context.inside_class_body = True
+    self.generic_visit(node)
+    self._context.inside_class_body = False
+    return node
+
   def visit_Module(self, node):
     first_node = node.body[0]
     import_boilerplate = copy_location(
@@ -233,8 +241,11 @@ class BodyTranslator(Translator):
     adjoint = copy.deepcopy(node)
     adjoint.name = f'_{node.name}_ctl'
     control_param_name = self._context.newname('__control')
+    parameter_position = 0
+    if self._context.inside_class_body:
+      parameter_position = 1
     adjoint.args.args.insert(
-      0, copy_location(arg(control_param_name, annotation=None), node))
+      parameter_position, copy_location(arg(control_param_name, annotation=None), node))
     adjoint.decorator_list = []
     ControlledComputer(
       self._context, control_param_name=control_param_name).visit(adjoint)

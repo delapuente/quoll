@@ -99,6 +99,8 @@ class Controlled(Functor):
   def __class_getitem__(cls, operation) -> Callable:
     if not getattr(operation, '__isqdef__', False):
       raise RuntimeError(f'{operation} is not a quantum operation')
+    if hasattr(operation, '__self__'):
+      return partial(operation.__func__.__ctl__, operation.__self__)
     return operation.__ctl__
 
 class Adjoint(Functor):
@@ -108,6 +110,8 @@ class Adjoint(Functor):
   def __class_getitem__(cls, operation) -> Callable:
     if not getattr(operation, '__isqdef__', False):
       raise RuntimeError(f'{operation} is not a quantum operation')
+    if hasattr(operation, '__self__'):
+      return partial(operation.__func__.__adj__, operation.__self__)
     return operation.__adj__
 
 from qiskit.extensions.standard.x import XGate
