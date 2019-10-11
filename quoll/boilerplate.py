@@ -20,7 +20,9 @@ def execute(*proxies: MeasurementProxy):
   assert len(proxies) > 0, 'No measurement proxies were provided.'
   circuit = proxies[0].circuit
   backend = quoll.config.get_backend()
-  result = qiskit.execute([circuit], backend=backend).result()
+  basis_gates = ['u1', 'u2', 'u3', 'cx', 'id']
+  result = qiskit.execute(
+    [circuit], backend=backend, basis_gates=basis_gates).result()
   return tuple(map(partial(Measurement, result=result), proxies))
 
 def new_circuit_with_registers(registers: Iterable[QuantumRegister]) -> QuantumCircuit:
