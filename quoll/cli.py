@@ -8,8 +8,6 @@ import sys
 from argparse import ArgumentParser
 from importlib import import_module
 
-import quoll.config
-import quoll.activate
 
 def build_parser():
   parser = ArgumentParser()
@@ -21,6 +19,8 @@ def build_parser():
 def main():
   parser = build_parser()
   args = parser.parse_args()
+
+  import quoll.config
   quoll.config.set_show_python(args.show_python)
 
   if args.backend:
@@ -34,6 +34,7 @@ def main():
   else:
     module_name, function_name = module_and_function[0], 'main'
 
+  import quoll.activate
   module = import_module(module_name)
   function = getattr(module, function_name)
   function()
