@@ -8,6 +8,9 @@ if hasattr(qiskit, 'IBMQ'):
   qiskit.IBMQ.load_account()
   _PROVIDERS['ibmq'] = qiskit.IBMQ.get_provider()
 
+if hasattr(qiskit, 'Aer'):
+  _PROVIDERS['aer'] = qiskit.Aer
+
 _BACKEND = qiskit.BasicAer.get_backend('qasm_simulator')
 
 _SHOW_PYTHON = False
