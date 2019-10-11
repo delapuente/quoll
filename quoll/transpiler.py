@@ -231,7 +231,9 @@ class BodyTranslator(Translator):
   def _compute_adjoint(self, node: FunctionDef):
     import copy
     adjoint = copy.deepcopy(node)
-    adjoint.name = f'_{node.name}_adj'
+    adjoint.name = f'{node.name}_adj'
+    if adjoint.name[0] != '_':
+      adjoint.name = f'_{adjoint.name}'
     adjoint.decorator_list = []
     AdjointComputer(self._context).visit(adjoint)
     return adjoint
@@ -239,7 +241,9 @@ class BodyTranslator(Translator):
   def _compute_controlled(self, node: FunctionDef):
     import copy
     adjoint = copy.deepcopy(node)
-    adjoint.name = f'_{node.name}_ctl'
+    adjoint.name = f'{node.name}_ctl'
+    if adjoint.name[0] != '_':
+      adjoint.name = f'_{adjoint.name}'
     control_param_name = self._context.newname('__control')
     parameter_position = 0
     if self._context.inside_class_body:
