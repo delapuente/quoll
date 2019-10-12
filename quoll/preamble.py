@@ -97,8 +97,8 @@ class Controlled(Functor):
   #TODO: Add type annotation for operation.
   #TODO: Refine return type with structured typing if possible.
   def __class_getitem__(cls, operation) -> Callable:
-    if not getattr(operation, '__isqdef__', False):
-      raise RuntimeError(f'{operation} is not a quantum operation')
+    if not hasattr(operation, '__ctl__'):
+      raise RuntimeError(f'Cannot get a controlled version of {operation}')
     if hasattr(operation, '__self__'):
       return getattr(operation.__self__, operation.__ctl__.__name__)
     return operation.__ctl__
@@ -108,8 +108,8 @@ class Adjoint(Functor):
   #TODO: Add type annotation for operation.
   #TODO: Refine return type with structured typing if possible.
   def __class_getitem__(cls, operation) -> Callable:
-    if not getattr(operation, '__isqdef__', False):
-      raise RuntimeError(f'{operation} is not a quantum operation')
+    if not hasattr(operation, '__adj__'):
+      raise RuntimeError(f'Cannot get the adjoint version of {operation}')
     if hasattr(operation, '__self__'):
       return getattr(operation.__self__, operation.__adj__.__name__)
     return operation.__adj__
