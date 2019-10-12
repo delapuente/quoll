@@ -5,6 +5,7 @@ from quoll.preamble import *
 from quoll.assertions import *
 from math import pi, sin, asin, sqrt
 
+"--------"
 @qdef(adj=True, ctl=True)
 def ApplyDatabaseOracle(markedQubit, dbRegister):
   Controlled[X](dbRegister, markedQubit)
@@ -47,6 +48,7 @@ def ApplyQuantumSearch(nIterations, nDatabaseQubits):
     resultElement = measure(dbRegister)
     return bool(resultSuccess), int(resultElement)
 
+"--------"
 def StatePreparationOracleTest():
   for nDatabaseQubits in range(1, 6):
     with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
@@ -59,6 +61,7 @@ def StatePreparationOracleTest():
         msg='Error: Success probability does not match theory'
       )
 
+"--------"
 def GroverHardCodedTest():
   for nDatabaseQubits in range(1, 5):
     for nIterations in range(6):
