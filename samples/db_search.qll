@@ -42,7 +42,7 @@ def SearchForMarkedState(nIterations, markedQubit, dbRegister):
     ReflectAboutInitialState(markedQubit, dbRegister)
 
 def ApplyQuantumSearch(nIterations, nDatabaseQubits):
-  with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+  with allocation(1, nDatabaseQubits) as (markedQubit, dbRegister):
     SearchForMarkedState(nIterations, markedQubit, dbRegister)
     resultSuccess = measure(markedQubit)
     resultElement = measure(dbRegister)
@@ -51,7 +51,7 @@ def ApplyQuantumSearch(nIterations, nDatabaseQubits):
 "--------"
 def StatePreparationOracleTest():
   for nDatabaseQubits in range(1, 6):
-    with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+    with allocation(1, nDatabaseQubits) as (markedQubit, dbRegister):
       ApplyStatePreparationOracle(markedQubit, dbRegister)
       successAmplitude = 1.0 / sqrt(2 ** nDatabaseQubits)
       successProbability = successAmplitude**2
@@ -65,7 +65,7 @@ def StatePreparationOracleTest():
 def GroverHardCodedTest():
   for nDatabaseQubits in range(1, 5):
     for nIterations in range(6):
-      with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+      with allocation(1, nDatabaseQubits) as (markedQubit, dbRegister):
         SearchForMarkedState(nIterations, markedQubit, dbRegister)
         dimension = 2.0 ** nDatabaseQubits
         successAmplitude = sin(

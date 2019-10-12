@@ -8,7 +8,7 @@ def bell_state(c, t):
   Controlled[X](c, t)
 
 def test_bell_state():
-  with allocate(1, 1) as (c, t):
+  with allocation(1, 1) as (c, t):
     bell_state(c, t)
     assertProb(
       [measure(t), measure(c)], [True, True],
@@ -22,7 +22,7 @@ def test_bell_state():
     )
 
 def test_bell_state_adj():
- with allocate(1, 1) as (c, t):
+ with allocation(1, 1) as (c, t):
     bell_state(c, t)
     Adjoint[bell_state](c, t)
     assertProb(
@@ -32,7 +32,7 @@ def test_bell_state_adj():
     )
 
 def test_controlled_bell():
-  with allocate(1, 1, 1) as (control, bell_control, bell_target):
+  with allocation(1, 1, 1) as (control, bell_control, bell_target):
     H(control)
     Controlled[bell_state](control, bell_control, bell_target)
     test_results = [

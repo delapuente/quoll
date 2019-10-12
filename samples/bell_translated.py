@@ -23,7 +23,7 @@ setattr(_bell_state_adj, '__adj__', bell_state)
 
 # Not a unit, so not translated, so far:
 def test_bell_state():
-  with allocate(1, 1) as (c, t):
+  with allocation(1, 1) as (c, t):
     bell_state(c, t)
     # The static analisys conclude this is a valid program since:
     # 1. There is no further circuit alterations after measurements.
@@ -50,7 +50,7 @@ def test_bell_state():
 
 
 def test_bell_state_adj():
- with allocate(1, 1) as (c, t):
+ with allocation(1, 1) as (c, t):
     bell_state(c, t)
     Adjoint[bell_state](c, t)
     _mp1 = measure(t)

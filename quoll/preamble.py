@@ -221,7 +221,7 @@ class Allocation:
   def __iter__(self) -> Iterable[Qubits]:
     return iter(self.qubits)
 
-def allocate(*sizes: int) -> Allocation:
+def allocation(*sizes: int) -> Allocation:
   return Allocation(*sizes)
 
 

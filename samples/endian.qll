@@ -8,7 +8,7 @@ def config_1010(a, b, c, d):
   X(b)
 
 def main():
-  with allocate(1, 1, 1, 1) as (a, b, c, d):
+  with allocation(1, 1, 1, 1) as (a, b, c, d):
     config_1010(a, b, c, d)
     assertProb(
       [measure(d), measure(c), measure(b), measure(a)],

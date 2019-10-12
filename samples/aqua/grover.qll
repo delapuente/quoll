@@ -49,7 +49,7 @@ class Grover:
       self._ReflectAboutInitialState(markedQubit, dbRegister)
 
   def _ApplyQuantumSearch(self, nIterations, nDatabaseQubits):
-    with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+    with allocation(1, nDatabaseQubits) as (markedQubit, dbRegister):
       self._SearchForMarkedState(nIterations, markedQubit, dbRegister)
       resultSuccess = measure(markedQubit)
       resultElement = measure(dbRegister)

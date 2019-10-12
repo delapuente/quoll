@@ -308,7 +308,7 @@ def _is_measurement(node: Call):
 
 
 def _is_allocation(node: With):
-  return isinstance(node.items[0].context_expr, Call) and isinstance(node.items[0].context_expr.func, Name) and node.items[0].context_expr.func.id == 'allocate'
+  return isinstance(node.items[0].context_expr, Call) and isinstance(node.items[0].context_expr.func, Name) and node.items[0].context_expr.func.id == 'allocation'
 
 
 def _is_control(node: If):
