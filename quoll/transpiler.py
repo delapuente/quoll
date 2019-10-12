@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, List, Dict
 import ast
-from ast import AST, dump, NodeTransformer, copy_location, Call, Name, Load, With, FunctionDef, NameConstant, Index, Subscript, arg, Expression, If, Suite
+from ast import AST, dump, NodeTransformer, copy_location, Call, Name, Load, With, FunctionDef, NameConstant, Index, Subscript, arg, Expression, If, Suite, Attribute
 from functools import partial
 from dataclasses import dataclass, field
 
@@ -118,7 +118,7 @@ def _is_functor_application(subscript):
   return isinstance(subscript.value, Name)\
     and subscript.value.id in ['Adjoint', 'Controlled']\
     and isinstance(subscript.slice, Index)\
-    and isinstance(subscript.slice.value, Name)
+    and isinstance(subscript.slice.value, (Name, Attribute))
 
 def _identify_signature(functor_application):
   if not isinstance(functor_application, Subscript):
