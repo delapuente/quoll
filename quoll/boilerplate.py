@@ -22,7 +22,9 @@ def execute(*proxies: MeasurementProxy):
   backend = quoll.config.get_backend()
   basis_gates = ['u1', 'u2', 'u3', 'cx', 'id']
   result = qiskit.execute(
-    [circuit], backend=backend, basis_gates=basis_gates).result()
+    [circuit], backend=backend,
+    shots=quoll.config.get_shots(),
+    basis_gates=basis_gates).result()
   return tuple(map(partial(Measurement, result=result), proxies))
 
 def new_circuit_with_registers(registers: Iterable[QuantumRegister]) -> QuantumCircuit:
