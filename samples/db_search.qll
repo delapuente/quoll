@@ -1,96 +1,87 @@
+# Transcription of:
+# https://github.com/microsoft/Quantum/blob/master/samples/algorithms/database-search/DatabaseSearch.qs
+
 from quoll.preamble import *
 from quoll.assertions import *
+from math import pi, sin, asin, sqrt
 
 @qdef(adj=True, ctl=True)
-def db_oracle(marked_qubit, db_register):
-  if control(db_register.is_max_value()):
-    X(marked_qubit)
-
+def ApplyDatabaseOracle(markedQubit, dbRegister):
+  Controlled[X](dbRegister, markedQubit)
 
 @qdef(adj=True, ctl=True)
-def uniform_superposition_oracle(db_register):
-  map(H, db_register)
-
-
-@qdef(adj=True, ctl=True)
-def state_preparation_oracle(marked_qubit, db_register):
-  uniform_superposition_oracle(db_register)
-  db_oracle(marked_qubit, db_register)
-
+def ApplyUniformSuperpositionOracle(dbRegister):
+  map(H, dbRegister)
 
 @qdef(adj=True, ctl=True)
-def reflect_marked(marked_qubit):
-  import math
-  R1(math.pi, marked_qubit)
+def ApplyStatePreparationOracle(markedQubit, dbRegister):
+  ApplyUniformSuperpositionOracle(dbRegister)
+  ApplyDatabaseOracle(markedQubit, dbRegister)
 
+@qdef
+def ReflectAboutMarkedState(markedQubit):
+  R1(pi, markedQubit)
 
-def reflect_zero(db_register):
-  map(X, db_register)
-  Controlled[Z](db_register[1:], db_register[0])
-  map(X, db_register)
+@qdef
+def ReflectAboutZero(dbRegister):
+  map(X, dbRegister)
+  Controlled[Z](dbRegister[1:], dbRegister[0])
+  map(X, dbRegister)
 
+@qdef
+def ReflectAboutInitialState(markedQubit, dbRegister):
+  Adjoint[ApplyStatePreparationOracle](markedQubit, dbRegister)
+  ReflectAboutZero(markedQubit + dbRegister)
+  ApplyStatePreparationOracle(markedQubit, dbRegister)
 
-def reflect_start(marked_qubit, db_register):
-  Adjoint[state_preparation_oracle](marked_qubit, db_register)
-  reflect_zero(marked_qubit + db_register)
-  state_preparation_oracle(marked_qubit, db_register)
+def SearchForMarkedState(nIterations, markedQubit, dbRegister):
+  ApplyStatePreparationOracle(markedQubit, dbRegister)
+  for idx in range(nIterations):
+    ReflectAboutMarkedState(markedQubit)
+    ReflectAboutInitialState(markedQubit, dbRegister)
 
+def ApplyQuantumSearch(nIterations, nDatabaseQubits):
+  with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+    SearchForMarkedState(nIterations, markedQubit, dbRegister)
+    resultSuccess = measure(markedQubit)
+    resultElement = measure(dbRegister)
+    return bool(resultSuccess), int(resultElement)
 
-def quantum_search(iterations, marked_qubit, db_register):
-  state_preparation_oracle(marked_qubit, db_register)
-  for _ in range(iterations):
-    reflect_marked(marked_qubit)
-    reflect_start(marked_qubit, db_register)
-
-
-def apply_quantum_search(iterations, db_qubits_count) -> Tuple[bool, int]:
-  with allocate(1, db_qubits_count) as (marked_qubit, db_register):
-    quantum_search(iterations, marked_qubit, db_register)
-    result_success = measure(marked_qubit)
-    result_element = measure(db_register)
-    return bool(result_success), int(result_element)
-
-
-def state_preparation_oracle_test():
-  for db_size in range(1, 6):
-    with allocate(1, db_size) as (marked_qubit, db_register):
-      state_preparation_oracle(marked_qubit, db_register)
-      success_amplitude = 1.0 / ((2**len(db_register)) ** 0.5)
-      success_probability = success_amplitude ** 2
+def StatePreparationOracleTest():
+  for nDatabaseQubits in range(1, 6):
+    with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+      ApplyStatePreparationOracle(markedQubit, dbRegister)
+      successAmplitude = 1.0 / sqrt(2 ** nDatabaseQubits)
+      successProbability = successAmplitude**2
       assertProb(
-        [measure(marked_qubit)], [True],
-        prob=success_probability,
-        msg="Error: Success probability does not match theory",
-        delta=1E-1)
+        [measure(markedQubit)], [1],
+        prob=successProbability, delta=1E-1,
+        msg='Error: Success probability does not match theory'
+      )
 
-
-def grover_hard_coded_test():
-  from math import sin, asin, sqrt
-
-  for db_size in range(1, 5):
-    for iterations in range(1, 6):
-      with allocate(1, db_size) as (marked_qubit, db_register):
-        quantum_search(iterations, marked_qubit, db_register)
-        success_amplitude = sin(
-          float(2 * iterations + 1) * asin(1.0 / sqrt(float(2 ** db_size))))
-        success_probability = success_amplitude ** 2
+def GroverHardCodedTest():
+  for nDatabaseQubits in range(1, 5):
+    for nIterations in range(6):
+      with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+        SearchForMarkedState(nIterations, markedQubit, dbRegister)
+        dimension = 2.0 ** nDatabaseQubits
+        successAmplitude = sin(
+          (2.0 * nIterations + 1.0) *
+          asin(1.0 / sqrt(dimension))
+        )
+        successProbability = successAmplitude ** 2.0
         assertProb(
-          [measure(marked_qubit)], [True],
-          prob=success_probability,
-          msg="Error: Success probability does not match theory",
-          delta=1E-1)
-
-        if measure(marked_qubit):
+          [measure(markedQubit)], [1],
+          prob=successProbability, delta=1E-1,
+          msg='Error: Success probability does not match theory'
+        )
+        if measure(markedQubit):
+          result = measure(dbRegister)
           assertFact(
-            measure(db_register) == db_register.all_ones_value(),
-            msg='Found state should be 1..1 string.')
-
+            result == dbRegister.all_ones_value(),
+            'Found state should be 1..1 string.')
 
 def main():
-  state_preparation_oracle_test()
-  grover_hard_coded_test()
-  print('Everything went fine.')
-
-
-if __name__ == '__main__':
-  main()
+  StatePreparationOracleTest()
+  GroverHardCodedTest()
+  print('Everything is fine!')
