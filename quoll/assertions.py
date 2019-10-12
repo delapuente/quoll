@@ -24,7 +24,8 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[bool], pro
   favorable = 0
   choice: List[Optional[str]] = [None] * total_registers
   for index, value in tested_registers:
-    choice[index] = bin(value)[2:] # Binary representation
+    padding = cregisters[index].size
+    choice[index] = bin(value)[2:].rjust(padding, '0') # Binary representation
 
   for one_choice in _expand_choices([*choice], cregisters):
     # TODO: choice is little-endian (we need big-endian). Qiskit doc is wrong.
