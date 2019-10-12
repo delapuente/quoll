@@ -3,7 +3,7 @@ from .aqua.grover import Grover
 
 @qdef(adj=True)
 def db_oracle(marked_qubit, db_register):
-  if control(db_register == 5):
+  if superposition(db_register == 5):
     X(marked_qubit)
 
 def main():

@@ -283,15 +283,15 @@ bp.wire_functors(map, _map_adj, _map_ctl, _map_adj_ctl)
 
 @qdef
 @contextmanager
-def control(comp: QComparison):
+def superposition(comp: QComparison):
   yield from _map_on_zero_valued_indices(X, comp)
 
 @qdef
 @contextmanager
-def _control_ctl(control: Qubits, comp: QComparison):
+def _superposition_ctl(control: Qubits, comp: QComparison):
   yield from _map_on_zero_valued_indices(partial(X.__ctl__, control), comp)
 
-bp.wire_functors(control, control, _control_ctl)
+bp.wire_functors(superposition, superposition, _superposition_ctl)
 
 def _map_on_zero_valued_indices(gate, comp: QComparison):
   qubits = comp.qubits

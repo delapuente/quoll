@@ -312,7 +312,7 @@ def _is_allocation(node: With):
 
 
 def _is_control(node: If):
-  return isinstance(node.test, Call) and isinstance(node.test.func, Name) and node.test.func.id == 'control'
+  return isinstance(node.test, Call) and isinstance(node.test.func, Name) and node.test.func.id == 'superposition'
 
 
 def _import_boilerplate(alias: str ='bp'):
@@ -320,7 +320,7 @@ def _import_boilerplate(alias: str ='bp'):
 
 
 def _control_context_node(node: If, control_param_name: str) -> With:
-  context_node = ast.parse(f'with control(_) as {control_param_name}: ...', mode='exec').body[0]
+  context_node = ast.parse(f'with superposition(_) as {control_param_name}: ...', mode='exec').body[0]
   context_node.items[0].context_expr.args[0] = node.test.args[0]
   return context_node
 
