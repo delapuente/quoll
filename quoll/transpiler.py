@@ -156,7 +156,7 @@ class BodyTranslator(Translator):
       # Replace measurement calls with variables
       for index, old_node in enumerate(node.body):
         self._context.allocation_context[-1][1] = index
-        self.visit(old_node)
+        node.body[index] = self.visit(old_node)
 
       # Create measurement proxies, execute and return measurements
       new_nodes = []
