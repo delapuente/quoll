@@ -228,6 +228,8 @@ def allocate(*sizes: int) -> Allocation:
 _MEASUREMENT_PROXY_CACHE: MutableMapping[object, MeasurementProxy] = {}
 
 def measure(register: Qubits, reset=False) -> MeasurementProxy:
+  if isinstance(register, Allocation):
+    register = sum((r for r in register), Qubits(register, []))
   key = (*register.qiskit_qubits,)
   if not key in _MEASUREMENT_PROXY_CACHE:
     circuit = register.allocation.circuit
