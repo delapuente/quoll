@@ -1,46 +1,56 @@
 from quoll.preamble import *
 from quoll.assertions import *
-import math
+from math import pi, sin, asin, sqrt, floor
 
 class Grover:
 
-  def __init__(self, db_oracle, db_qubits_count):
-    self._db_oracle = db_oracle
-    self._db_qubits_count = db_qubits_count
+  def __init__(self, dbOracle, dbRegisterSize):
+    self._dbOracle = dbOracle
+    self._dbRegisterSize = dbRegisterSize
 
   def run(self):
-    iterations = math.ceil(math.pi/4 * (2**self._db_qubits_count)**.5)
-    with allocate(1, self._db_qubits_count) as (marked_qubit, db_register):
-      self._quantum_search(iterations, marked_qubit, db_register)
-      result_success = measure(marked_qubit)
-      result_element = measure(db_register)
-      return bool(result_success), int(result_element)
+    registerSize = self._dbRegisterSize
+    iterations = floor(3/4 * pi * sqrt(2 ** registerSize))
+    return self._ApplyQuantumSearch(iterations, registerSize)
 
   @qdef(adj=True, ctl=True)
-  def _uniform_superposition_oracle(self, db_register):
-    map(H, db_register)
+  def _ApplyDatabaseOracle(self, markedQubit, dbRegister):
+    self._dbOracle(markedQubit, dbRegister)
 
   @qdef(adj=True, ctl=True)
-  def _state_preparation_oracle(self, marked_qubit, db_register):
-    self._uniform_superposition_oracle(db_register)
-    self._db_oracle(marked_qubit, db_register)
+  def _ApplyUniformSuperpositionOracle(self, dbRegister):
+    map(H, dbRegister)
 
   @qdef(adj=True, ctl=True)
-  def _reflect_marked(self, marked_qubit):
-    R1(math.pi, marked_qubit)
+  def _ApplyStatePreparationOracle(self, markedQubit, dbRegister):
+    self._ApplyUniformSuperpositionOracle(dbRegister)
+    self._ApplyDatabaseOracle(markedQubit, dbRegister)
 
-  def _reflect_zero(self, db_register):
-    map(X, db_register)
-    Controlled[Z](db_register[1:], db_register[0])
-    map(X, db_register)
+  @qdef
+  def _ReflectAboutMarkedState(self, markedQubit):
+    R1(pi, markedQubit)
 
-  def _reflect_start(self, marked_qubit, db_register):
-    Adjoint[self._state_preparation_oracle](marked_qubit, db_register)
-    self._reflect_zero(marked_qubit + db_register)
-    self._state_preparation_oracle(marked_qubit, db_register)
+  @qdef
+  def _ReflectAboutZero(self, dbRegister):
+    map(X, dbRegister)
+    Controlled[Z](dbRegister[1:], dbRegister[0])
+    map(X, dbRegister)
 
-  def _quantum_search(self, iterations, marked_qubit, db_register):
-    self._state_preparation_oracle(marked_qubit, db_register)
-    for _ in range(iterations):
-      self._reflect_marked(marked_qubit)
-      self._reflect_start(marked_qubit, db_register)
+  @qdef
+  def _ReflectAboutInitialState(self, markedQubit, dbRegister):
+    Adjoint[self._ApplyStatePreparationOracle](markedQubit, dbRegister)
+    self._ReflectAboutZero(markedQubit + dbRegister)
+    self._ApplyStatePreparationOracle(markedQubit, dbRegister)
+
+  def _SearchForMarkedState(self, nIterations, markedQubit, dbRegister):
+    self._ApplyStatePreparationOracle(markedQubit, dbRegister)
+    for idx in range(nIterations):
+      self._ReflectAboutMarkedState(markedQubit)
+      self._ReflectAboutInitialState(markedQubit, dbRegister)
+
+  def _ApplyQuantumSearch(self, nIterations, nDatabaseQubits):
+    with allocate(1, nDatabaseQubits) as (markedQubit, dbRegister):
+      self._SearchForMarkedState(nIterations, markedQubit, dbRegister)
+      resultSuccess = measure(markedQubit)
+      resultElement = measure(dbRegister)
+      return bool(resultSuccess), int(resultElement)
