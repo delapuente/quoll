@@ -4,7 +4,7 @@ from quoll.measurements import Measurement
 
 AnyResult = Union[bool, int]
 
-def assertProb(measurements: Sequence[Measurement], results: Sequence[AnyResult], prob: float, msg: str = '', delta=1E-3):
+def assertProb(measurements: Sequence[Measurement], results: Sequence[AnyResult], prob: float, msg: str = '', delta=1E-1):
   assert len(measurements) > 0 and len(results) > 0,\
     'Measurements and results length cannot be 0'
 
