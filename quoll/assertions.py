@@ -1,5 +1,7 @@
 import itertools
 from typing import Union, Sequence, List, Optional, cast
+
+import quoll.boilerplate as bp
 from quoll.measurements import Measurement
 
 AnyResult = Union[bool, int]
@@ -14,7 +16,7 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[AnyResult]
   histogram = measurements[0].result.get_counts()
   total = sum(histogram.values())
 
-  circuit = measurements[0].proxy.circuit
+  circuit = bp.__ALLOCATIONS__[-1].circuit
   cregisters = circuit.cregs
   tested_registers = tuple(
     zip((cregisters.index(m.proxy.classical_register) for m in measurements), results))

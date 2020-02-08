@@ -4,6 +4,8 @@ from typing import Tuple, Union
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 
+import quoll.boilerplate as bp
+
 @dataclass
 class MeasurementProxy:
 
@@ -29,7 +31,7 @@ class Measurement:
     # TODO: Endian mess. Should clarify this is this way and add some tests.
     registers_bitstrings = list(reversed(whole_memory_bitstring.split(' ')))
     self.measurement_bitstring = registers_bitstrings[
-      self.proxy.circuit.cregs.index(self.proxy.classical_register)]
+      bp.__ALLOCATIONS__[-1].circuit.cregs.index(self.proxy.classical_register)]
 
   def __int__(self):
     return int(self.measurement_bitstring, 2)

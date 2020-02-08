@@ -118,7 +118,7 @@ from qiskit.extensions.standard.x import XGate
 
 @qdef
 def X(q: Qubits):
-  q.allocation.circuit.x(q.qiskit_qubits)
+  bp.__ALLOCATIONS__[-1].circuit.x(q.qiskit_qubits)
 
 @qdef
 def _X_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
@@ -131,7 +131,7 @@ from qiskit.extensions.standard.h import HGate
 
 @qdef
 def H(q: Qubits):
-    q.allocation.circuit.h(q.qiskit_qubits)
+    bp.__ALLOCATIONS__[-1].circuit.h(q.qiskit_qubits)
 
 @qdef
 def _H_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
@@ -144,11 +144,11 @@ from qiskit.extensions.standard.u1 import U1Gate
 
 @qdef
 def R1(angle: float, q: Qubits):
-  q.allocation.circuit.u1(angle, q.qiskit_qubits)
+  bp.__ALLOCATIONS__[-1].circuit.u1(angle, q.qiskit_qubits)
 
 @qdef
 def _R1_adj(angle: float, q: Qubits):
-  q.allocation.circuit.append(U1Gate(angle).inverse(), [q.qiskit_qubits])
+  bp.__ALLOCATIONS__[-1].circuit.append(U1Gate(angle).inverse(), [q.qiskit_qubits])
 
 @qdef
 def _R1_adj_ctl(control: Union[AllOneControl, Qubits], angle: float, q: Qubits):
@@ -164,7 +164,7 @@ from qiskit.extensions.standard.z import ZGate
 
 @qdef
 def Z(q: Qubits):
-  q.allocation.circuit.z(q.qiskit_qubits)
+  bp.__ALLOCATIONS__[-1].circuit.z(q.qiskit_qubits)
 
 @qdef
 def _Z_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
@@ -187,7 +187,7 @@ def _multiplexed_control(gate, control: Union[AllOneControl, Qubits], target: Qu
   gate_list = [
     IdGate().to_matrix()
     for _ in range(control_patterns_count - 1)] + [gate.to_matrix()]
-  target.allocation.circuit.append(
+  bp.__ALLOCATIONS__[-1].circuit.append(
     UCG(gate_list, False), (target.qiskit_qubits, ) + control_qubits)
 
 def head(l: list):
@@ -213,9 +213,36 @@ class Allocation:
     self.qubits = tuple(map(partial(Qubits, self), registers))
 
   def __enter__(self):
+    bp.__ALLOCATIONS__.append(self)
     return self
 
   def __exit__(self, *_):
+    bp.__ALLOCATIONS__.pop()
+
+  def __iter__(self) -> Iterable[Qubits]:
+    return iter(self.qubits)
+
+
+# TODO: Should allow for managing and **reusing** ancilla qubits.
+class AncillaExtension:
+
+  allocation: Allocation
+
+  qubits: Tuple[Qubits, ...]
+
+  def __init__(self, allocation: Allocation, *sizes: int):
+    registers = bp.new_registers(*sizes)
+    allocation.circuit.add_register(*registers)
+    self.allocation = allocation
+    self.qubits = tuple(map(partial(Qubits, self), registers))
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, *_):
+    # TODO: Add an option for resetting the qubits. Tracking these and returning
+    # them enables reusing. Not sure if adding this or let the compiler to take
+    # care.
     pass
 
   def __iter__(self) -> Iterable[Qubits]:
@@ -224,6 +251,8 @@ class Allocation:
 def allocation(*sizes: int) -> Allocation:
   return Allocation(*sizes)
 
+def ancilla(*sizes: int) -> AncillaExtension:
+  return AncillaExtension(bp.__ALLOCATIONS__[-1], *sizes)
 
 _MEASUREMENT_PROXY_CACHE: MutableMapping[object, MeasurementProxy] = {}
 
@@ -232,7 +261,7 @@ def measure(register: Qubits, reset=False) -> MeasurementProxy:
     register = sum((r for r in register), Qubits(register, []))
   key = (*register.qiskit_qubits,)
   if not key in _MEASUREMENT_PROXY_CACHE:
-    circuit = register.allocation.circuit
+    circuit = bp.__ALLOCATIONS__[-1].circuit
     cregister = bp.ClassicalRegister(len(register))
     qregister = register.qiskit_qubits
     circuit.add_register(cregister)

@@ -1,6 +1,7 @@
 from functools import partial
 from typing import Type, TypeVar, Any, Tuple, Iterable
 from dataclasses import dataclass
+from collections import deque
 
 import qiskit
 from qiskit import QuantumRegister, QuantumCircuit, BasicAer, ClassicalRegister
@@ -12,13 +13,15 @@ from quoll.measurements import Measurement, MeasurementProxy
 
 T = TypeVar('T')
 
+__ALLOCATIONS__: deque = deque()
+
 def singleton(cls: Type[T]) -> T:
   return cls()
 
 
 def execute(*proxies: MeasurementProxy):
   assert len(proxies) > 0, 'No measurement proxies were provided.'
-  circuit = proxies[0].circuit
+  circuit = __ALLOCATIONS__[-1].circuit
   backend = quoll.config.get_backend()
   basis_gates = ['u1', 'u2', 'u3', 'cx', 'id']
   result = qiskit.execute(
