@@ -271,23 +271,6 @@ def measure(register: Qubits, reset=False) -> MeasurementProxy:
   return _MEASUREMENT_PROXY_CACHE[key]
 
 
-class ResetContext:
-
-  def __init__(self, allocation: Allocation):
-    self._allocation = allocation
-
-  def __enter__(self):
-    return self._allocation.__enter__()
-
-  def __exit__(self, *_):
-    self._allocation.__exit__(*_)
-    ... #TODO: Reset qubits of the allocation
-
-
-def reset(allocation: Allocation) -> ResetContext:
-  return ResetContext(allocation)
-
-
 # TODO: Reinterpreted Python builtins
 _PYTHON_MAP = map
 
