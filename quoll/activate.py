@@ -8,7 +8,7 @@ from quoll.transpiler import translate
 
 class QuollLoader(AbmLoader, SourceFileLoader):
 
-  extensions = ('.qll', '.quoll')
+  extensions = ('.py', '.qll', '.quoll')
 
   def source_to_code(self, data, path, *, _optimize=-1):
     source = data.decode('utf-8')

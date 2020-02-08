@@ -134,3 +134,6 @@ dmypy.json
 
 *.qll.py
 *.quoll.py
+*.py.py
+
+.DS_Store
