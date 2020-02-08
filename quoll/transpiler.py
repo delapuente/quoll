@@ -140,10 +140,11 @@ class BodyTranslator(Translator):
     return node
 
   def visit_Module(self, node):
-    first_node = node.body[0]
-    import_boilerplate = copy_location(
-      _import_boilerplate(self._context.boilerplate_alias), first_node)
-    node.body.insert(0, import_boilerplate)
+    if node.body:
+      first_node = node.body[0]
+      import_boilerplate = copy_location(
+        _import_boilerplate(self._context.boilerplate_alias), first_node)
+      node.body.insert(0, import_boilerplate)
 
     self.generic_visit(node)
     return node
