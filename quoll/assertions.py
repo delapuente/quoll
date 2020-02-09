@@ -36,7 +36,7 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[AnyResult]
   actual_probability = favorable / total
   actual_delta = abs(actual_probability - prob)
 
-  assertion_message = f'Probabilities don\'t match (delta={actual_delta}).'
+  assertion_message = f'Probabilities don\'t match (actual delta={actual_delta} greater than expected delta={delta}).'
   if msg:
     assertion_message = f'{assertion_message}\n{msg}'
 
