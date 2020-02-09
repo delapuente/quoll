@@ -198,9 +198,12 @@ class BodyTranslator(Translator):
   def visit_Call(self, node: Call):
     self.generic_visit(node)
     if _is_measurement(node):
-      m_name = f'_m{len(self._context.measurement_hoisting_table[-1]) + 1}'
-      self._context.measurement_hoisting_table[-1].append((self._context.allocation_context[-1][1], node, m_name))
-      return copy_location(_replace_measurement(m_name), node)
+      # XXX: If the measurement does not appear inside an allocation context's
+      # suite, forget about it.
+      if len(self._context.measurement_hoisting_table):
+        m_name = f'_m{len(self._context.measurement_hoisting_table[-1]) + 1}'
+        self._context.measurement_hoisting_table[-1].append((self._context.allocation_context[-1][1], node, m_name))
+        return copy_location(_replace_measurement(m_name), node)
 
     return node
 
