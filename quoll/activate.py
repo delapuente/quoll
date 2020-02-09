@@ -15,4 +15,4 @@ class QuollLoader(AbmLoader, SourceFileLoader):
     ast = translate(source, path)
     return super().source_to_code(ast, path, _optimize=_optimize)
 
-QuollLoader.register(override_builtins=True)
+QuollLoader.register()
