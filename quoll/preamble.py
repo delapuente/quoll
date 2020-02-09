@@ -172,6 +172,25 @@ def _Z_ctl(control: Union[AllOneControl, Qubits], q: Qubits):
 
 bp.wire_functors(Z, Z, _Z_ctl)
 
+from qiskit.extensions.standard.rx import RXGate
+
+@qdef
+def RX(theta: float, q: Qubits):
+  bp.__ALLOCATIONS__[-1].circuit.rx(theta, q.qiskit_qubits)
+
+@qdef
+def _RX_adj(theta: float, q: Qubits):
+  bp.__ALLOCATIONS__[-1].circuit.append(RXGate(theta).inverse(), [q.qiskit_qubits])
+
+@qdef
+def _RX_ctl(control: Union[AllOneControl, Qubits], angle: float, q: Qubits):
+  _multiplexed_control(RXGate(angle), control, q)
+
+def _RX_adj_ctl(control: Union[AllOneControl, Qubits], angle: float, q: Qubits):
+  _multiplexed_control(RXGate(angle).inverse(), control, q)
+
+bp.wire_functors(RX, _RX_adj, _RX_ctl, _RX_adj_ctl)
+
 from qiskit.extensions.standard.iden import IdGate
 from qiskit.extensions.quantum_initializer.ucg import UCG
 
