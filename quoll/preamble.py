@@ -275,7 +275,7 @@ def ancilla(*sizes: int) -> AncillaExtension:
 
 _MEASUREMENT_PROXY_CACHE: MutableMapping[object, MeasurementProxy] = {}
 
-def measure(register: Qubits, reset=False) -> MeasurementProxy:
+def measure(register: Qubits) -> MeasurementProxy:
   if isinstance(register, Allocation):
     register = sum((r for r in register), Qubits(register, []))
   key = (*register.qiskit_qubits,)

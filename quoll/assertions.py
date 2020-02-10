@@ -13,6 +13,9 @@ def assertProb(measurements: Sequence[Measurement], results: Sequence[AnyResult]
   assert len(measurements) == len(results),\
     'Measurements and results have different length.'
 
+  # TODO: Add assertions to prevent repeated measurements. If repeating,
+  # only the last one applies.
+
   histogram = measurements[0].result.get_counts()
   total = sum(histogram.values())
 
