@@ -39,8 +39,8 @@ def main():
     H(input_)
     oracle(f, input_, preparation)
     H(input_)
-    guess = bool(measure(input_))
-    assert guess == is_balanced, f'Wrong guess! function was {is_balanced and "balanced" or "constant"}'
+    guess_is_balanced = bool(measure(input_))
+    assert guess_is_balanced == is_balanced, f'Wrong guess! function was {is_balanced and "balanced" or "constant"}'
 
 
 if __name__ == '__main__':
