@@ -13,7 +13,7 @@ def build_parser():
   parser = ArgumentParser()
   parser.add_argument('modulefunc', type=str, help='function path in the format \'package.module:function_name\'.')
   parser.add_argument('-b', '--backend', type=str, help='backend name the format \'provider:backend_name\'.')
-  parser.add_argument('-c', '--config', type=str, default='quoll.ini', help='Quoll configuration with the exection options among others.')
+  parser.add_argument('-c', '--config', type=str, default='quoll.ini', help='Quoll configuration with the execution options among others.')
   parser.add_argument('--show-python', action='store_true', help='generates *.qll.py files with the Python transpiled version of the source.')
   return parser
 
