@@ -170,8 +170,12 @@ class BodyTranslator(Translator):
       new_nodes.append(self._assign_measurements(proxy_to_measure_names, node))
 
       # Insert at the proper point in the current allocation
-      insertion_point = self._context.measurement_hoisting_table[-1][0][0]
-      node.body[insertion_point:insertion_point] = new_nodes
+      hoisting_table = self._context.measurement_hoisting_table[-1]
+
+      # If there are measurements to hoist
+      if len(hoisting_table):
+        insertion_point = hoisting_table[0][0]
+        node.body[insertion_point:insertion_point] = new_nodes
 
       self._context.allocation_context.pop()
       self._context.measurement_hoisting_table.pop()
