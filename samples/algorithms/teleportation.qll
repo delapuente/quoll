@@ -12,7 +12,6 @@ def set_secret_state(target):
   chance = cos(angle/2.0)**2.0
   return chance
 
-@qdef
 def teleport(owner, target, receptor):
   Controlled[X](target, owner)
   H(target)

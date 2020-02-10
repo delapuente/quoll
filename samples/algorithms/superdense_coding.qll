@@ -35,7 +35,7 @@ def main():
     alice = Alice(q1)
     bob = Bob(q2)
 
-    message = random.randrange(0, 3)
+    message = random.randint(0, 3)
     alice.encode(message)
 
     bob.receive(alice.q)
