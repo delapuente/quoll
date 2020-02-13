@@ -2,6 +2,7 @@ import random
 
 from quoll.preamble import *
 from quoll.assertions import *
+from quoll import debug
 
 from samples.algorithms.utils import oracle
 
@@ -40,8 +41,7 @@ def main():
     oracle(f, input_, preparation)
     H(input_)
     guess_is_balanced = bool(measure(input_))
-    assert guess_is_balanced == is_balanced, f'Wrong guess! function was {is_balanced and "balanced" or "constant"}'
-
+    assertFact(guess_is_balanced == is_balanced, f'Wrong guess! function was {is_balanced and "balanced" or "constant"}')
 
 if __name__ == '__main__':
   main()
