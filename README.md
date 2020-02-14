@@ -1,5 +1,5 @@
 # Quoll
-> The other animal starting with Q.
+> The [other animal](https://nnimgt-a.akamaihd.net/transform/v1/crop/frm/tiBeXLQSZGBbnMmY9AKBcc/1c6a3410-c834-4524-8ecf-89ca2de8ffad.jpg/r3_0_1473_826_w1200_h678_fmax.jpg) starting with Q.
 
 Quoll is a Python library that extends the language to add quantum-circuit-oriented, high-level features. Like this:
 
